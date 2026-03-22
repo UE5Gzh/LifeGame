@@ -12,6 +12,7 @@ import com.example.lifegame.data.entity.BehaviorWithModifiers
 import com.example.lifegame.repository.BehaviorRepository
 import com.example.lifegame.repository.AttributeRepository
 import com.example.lifegame.repository.QuestRepository
+import com.example.lifegame.repository.LogRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +26,8 @@ import javax.inject.Inject
 class QuestViewModel @Inject constructor(
     private val questRepository: QuestRepository,
     private val attributeRepository: AttributeRepository,
-    private val behaviorRepository: BehaviorRepository
+    private val behaviorRepository: BehaviorRepository,
+    private val logRepository: LogRepository
 ) : ViewModel() {
 
     val attributes: StateFlow<List<AttributeWithRanks>> = attributeRepository.allAttributesWithRanks
@@ -70,7 +72,12 @@ class QuestViewModel @Inject constructor(
                     if (q.quest.status == 0) {
                         // Failed
                         questRepository.updateQuest(q.quest.copy(status = 3, lastResetTime = System.currentTimeMillis()))
-                        applyPunishments(q)
+                        val punishments = applyPunishments(q)
+                        logRepository.insertLog(
+                            type = "QUEST_ABANDON",
+                            title = "日常任务超时失败: ${q.quest.name}",
+                            details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments"
+                        )
                     } else if (q.quest.status == 2) {
                         // Claimed -> Reset to In Progress
                         questRepository.updateQuest(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()))
@@ -131,24 +138,42 @@ class QuestViewModel @Inject constructor(
         viewModelScope.launch {
             // Apply rewards
             val currentAttrs = attributes.value
+            val rewardDetails = StringBuilder()
+            
             for (effect in questWithDetails.effects.filter { !it.isPunishment && it.type == 0 }) {
                 val attrToUpdate = currentAttrs.find { it.attribute.id == effect.attributeId }?.attribute
                 if (attrToUpdate != null && effect.valueChange != null) {
                     attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + effect.valueChange))
+                    rewardDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${effect.valueChange} ")
                 }
             }
             questRepository.updateQuest(questWithDetails.quest.copy(status = 2))
+            
+            val typeStr = when(questWithDetails.quest.type) {
+                0 -> "日常"
+                1 -> "主线"
+                else -> "支线"
+            }
+            logRepository.insertLog(
+                type = "QUEST_COMPLETION",
+                title = "完成${typeStr}任务: ${questWithDetails.quest.name}",
+                details = if (rewardDetails.isEmpty()) "获得奖励: 无" else "获得奖励: $rewardDetails"
+            )
         }
     }
 
-    private suspend fun applyPunishments(questWithDetails: QuestWithDetails) {
+    private suspend fun applyPunishments(questWithDetails: QuestWithDetails): String {
         val currentAttrs = attributes.value
+        val punishmentDetails = StringBuilder()
+        
         for (effect in questWithDetails.effects.filter { it.isPunishment && it.type == 0 }) {
             val attrToUpdate = currentAttrs.find { it.attribute.id == effect.attributeId }?.attribute
             if (attrToUpdate != null && effect.valueChange != null) {
                 attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + effect.valueChange))
+                punishmentDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${effect.valueChange} ")
             }
         }
+        return punishmentDetails.toString()
     }
 
     fun createQuest(
@@ -167,6 +192,41 @@ class QuestViewModel @Inject constructor(
                 status = 0
             )
             questRepository.insertQuestWithDetails(q, attributeGoals, behaviorGoals, effects)
+            
+            val typeStr = when(type) {
+                0 -> "日常"
+                1 -> "主线"
+                else -> "支线"
+            }
+            logRepository.insertLog(
+                type = "QUEST_CREATION",
+                title = "创建${typeStr}任务: $name",
+                details = ""
+            )
+        }
+    }
+
+    fun deleteQuest(quest: QuestEntity) {
+        viewModelScope.launch {
+            questRepository.deleteQuest(quest)
+        }
+    }
+
+    fun giveUpQuest(questWithDetails: QuestWithDetails) {
+        viewModelScope.launch {
+            questRepository.updateQuest(questWithDetails.quest.copy(status = 3))
+            val punishments = applyPunishments(questWithDetails)
+            
+            val typeStr = when(questWithDetails.quest.type) {
+                0 -> "日常"
+                1 -> "主线"
+                else -> "支线"
+            }
+            logRepository.insertLog(
+                type = "QUEST_ABANDON",
+                title = "放弃${typeStr}任务: ${questWithDetails.quest.name}",
+                details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments"
+            )
         }
     }
 }

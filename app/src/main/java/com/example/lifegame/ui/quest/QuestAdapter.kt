@@ -13,6 +13,7 @@ import com.example.lifegame.databinding.ItemQuestBinding
 
 class QuestAdapter(
     private val onQuestClick: (QuestWithDetails) -> Unit,
+    private val onQuestLongClick: (QuestWithDetails) -> Unit,
     private val calculateProgress: (QuestWithDetails) -> Float
 ) : ListAdapter<QuestWithDetails, QuestAdapter.QuestViewHolder>(QuestDiffCallback()) {
 
@@ -63,6 +64,11 @@ class QuestAdapter(
 
             binding.root.setOnClickListener {
                 onQuestClick(item)
+            }
+
+            binding.root.setOnLongClickListener {
+                onQuestLongClick(item)
+                true
             }
         }
     }

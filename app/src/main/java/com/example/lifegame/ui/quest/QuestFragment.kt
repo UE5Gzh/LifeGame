@@ -60,6 +60,9 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             onQuestClick = { quest ->
                 handleQuestClick(quest)
             },
+            onQuestLongClick = { quest ->
+                showQuestOptionsDialog(quest)
+            },
             calculateProgress = { quest ->
                 viewModel.calculateProgress(quest, viewModel.attributes.value)
             }
@@ -101,6 +104,11 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                         filterQuests()
                     }
                 }
+                launch {
+                    viewModel.behaviors.collect {
+                        // Just collect to keep the StateFlow active and fetch from DB
+                    }
+                }
             }
         }
     }
@@ -135,6 +143,41 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 showQuestDetailsDialog(questWithDetails)
             }
         }
+    }
+
+    private fun showQuestOptionsDialog(questWithDetails: QuestWithDetails) {
+        val options = mutableListOf("删除任务")
+        if (questWithDetails.quest.status == 0) { // Only in progress quests can be given up
+            options.add(0, "放弃任务") // Put it first
+        }
+        
+        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setTitle(questWithDetails.quest.name)
+            .setItems(options.toTypedArray()) { _, which ->
+                val selected = options[which]
+                if (selected == "删除任务") {
+                    MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                        .setTitle("确认删除")
+                        .setMessage("确定要彻底删除该任务吗？该操作不可恢复。")
+                        .setPositiveButton("删除") { _, _ ->
+                            viewModel.deleteQuest(questWithDetails.quest)
+                            Toast.makeText(requireContext(), "任务已删除", Toast.LENGTH_SHORT).show()
+                        }
+                        .setNegativeButton("取消", null)
+                        .show()
+                } else if (selected == "放弃任务") {
+                    MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                        .setTitle("确认放弃")
+                        .setMessage("放弃任务将触发该任务的惩罚（如果有），确定放弃吗？")
+                        .setPositiveButton("放弃") { _, _ ->
+                            viewModel.giveUpQuest(questWithDetails)
+                            Toast.makeText(requireContext(), "任务已放弃", Toast.LENGTH_SHORT).show()
+                        }
+                        .setNegativeButton("取消", null)
+                        .show()
+                }
+            }
+            .show()
     }
 
     private fun showQuestDetailsDialog(q: QuestWithDetails) {
