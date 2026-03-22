@@ -62,11 +62,31 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
     }
 
     private fun setupRecyclerView() {
-        adapter = AttributeAdapter { attributeWithRanks ->
-            showEditAttributeDialog(attributeWithRanks.attribute)
-        }
+        adapter = AttributeAdapter(
+            onAttributeClick = { attributeWithRanks ->
+                showEditAttributeDialog(attributeWithRanks.attribute)
+            },
+            onAttributeLongClick = { attributeWithRanks ->
+                showDeleteAttributeDialog(attributeWithRanks.attribute)
+            }
+        )
         binding.rvAttributes.layoutManager = LinearLayoutManager(requireContext())
         binding.rvAttributes.adapter = adapter
+    }
+
+    private fun showDeleteAttributeDialog(attribute: AttributeEntity) {
+        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setTitle("删除属性")
+            .setMessage("确定要删除「${attribute.name}」吗？")
+            .setPositiveButton("删除") { _, _ ->
+                viewModel.checkAndDeleteAttribute(attribute) { success, message ->
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     private fun showAddAttributeDialog() {

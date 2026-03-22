@@ -11,7 +11,8 @@ import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.databinding.ItemAttributeBinding
 
 class AttributeAdapter(
-    private val onAttributeClick: (AttributeWithRanks) -> Unit
+    private val onAttributeClick: (AttributeWithRanks) -> Unit,
+    private val onAttributeLongClick: (AttributeWithRanks) -> Unit
 ) : ListAdapter<AttributeWithRanks, AttributeAdapter.AttributeViewHolder>(AttributeDiffCallback()) {
 
     inner class AttributeViewHolder(private val binding: ItemAttributeBinding) :
@@ -45,6 +46,11 @@ class AttributeAdapter(
 
             binding.root.setOnClickListener {
                 onAttributeClick(item)
+            }
+
+            binding.root.setOnLongClickListener {
+                onAttributeLongClick(item)
+                true
             }
         }
     }

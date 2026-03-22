@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifegame.data.entity.AttributeEntity
 import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.repository.AttributeRepository
+import com.example.lifegame.repository.BehaviorRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AttributeViewModel @Inject constructor(
-    private val repository: AttributeRepository
+    private val repository: AttributeRepository,
+    private val behaviorRepository: BehaviorRepository
 ) : ViewModel() {
 
     val attributesWithRanks: StateFlow<List<AttributeWithRanks>> = repository.allAttributesWithRanks
@@ -48,9 +50,15 @@ class AttributeViewModel @Inject constructor(
         }
     }
 
-    fun deleteAttribute(attribute: AttributeEntity) {
+    fun checkAndDeleteAttribute(attribute: AttributeEntity, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
-            repository.deleteAttribute(attribute)
+            val isReferenced = behaviorRepository.isAttributeReferenced(attribute.id)
+            if (isReferenced) {
+                onResult(false, "无法删除：「${attribute.name}」已被某些行为引用")
+            } else {
+                repository.deleteAttribute(attribute)
+                onResult(true, "删除成功")
+            }
         }
     }
 

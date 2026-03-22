@@ -3,6 +3,7 @@ package com.example.lifegame.di
 import android.content.Context
 import androidx.room.Room
 import com.example.lifegame.data.dao.AttributeDao
+import com.example.lifegame.data.dao.BehaviorDao
 import com.example.lifegame.data.dao.RankDao
 import com.example.lifegame.data.local.AppDatabase
 import dagger.Module
@@ -34,5 +35,10 @@ object DatabaseModule {
     @Provides
     fun provideRankDao(appDatabase: AppDatabase): RankDao {
         return appDatabase.rankDao()
+    }
+
+    @Provides
+    fun provideBehaviorDao(appDatabase: AppDatabase): BehaviorDao {
+        return appDatabase.behaviorDao()
     }
 }
