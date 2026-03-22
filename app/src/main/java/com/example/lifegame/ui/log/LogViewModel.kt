@@ -28,4 +28,27 @@ class LogViewModel @Inject constructor(
             logRepository.clearLogs()
         }
     }
+
+    fun deleteLog(log: LogEntity) {
+        viewModelScope.launch {
+            logRepository.deleteLog(log)
+        }
+    }
+
+    fun toggleLogLock(log: LogEntity) {
+        viewModelScope.launch {
+            logRepository.updateLog(log.copy(isLocked = !log.isLocked))
+        }
+    }
+
+    fun getMaxLogLimit(): Int {
+        return logRepository.getMaxLogLimit()
+    }
+
+    fun setMaxLogLimit(limit: Int) {
+        logRepository.setMaxLogLimit(limit)
+        viewModelScope.launch {
+            logRepository.checkAndEnforceLimit()
+        }
+    }
 }

@@ -33,13 +33,21 @@ object DatabaseModule {
                 )
             }
         }
+        
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `logs` ADD COLUMN `isLocked` INTEGER NOT NULL DEFAULT 0"
+                )
+            }
+        }
 
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "lifegame_database"
         )
-        .addMigrations(MIGRATION_6_7)
+        .addMigrations(MIGRATION_6_7, MIGRATION_7_8)
         .fallbackToDestructiveMigration()
         .build()
     }

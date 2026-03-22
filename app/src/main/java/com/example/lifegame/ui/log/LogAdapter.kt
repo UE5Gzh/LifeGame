@@ -12,7 +12,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class LogAdapter : ListAdapter<LogEntity, LogAdapter.LogViewHolder>(LogDiffCallback()) {
+class LogAdapter(
+    private val onLogLongClick: (LogEntity) -> Unit
+) : ListAdapter<LogEntity, LogAdapter.LogViewHolder>(LogDiffCallback()) {
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -39,6 +41,17 @@ class LogAdapter : ListAdapter<LogEntity, LogAdapter.LogViewHolder>(LogDiffCallb
                 binding.tvDetail.visibility = View.GONE
             }
 
+            if (log.isLocked) {
+                binding.ivLock.visibility = View.VISIBLE
+                binding.cardLog.setCardBackgroundColor(android.graphics.Color.parseColor("#1A237E")) // Light blue dark theme
+                binding.cardLog.strokeWidth = 2
+                binding.cardLog.strokeColor = android.graphics.Color.parseColor("#3F51B5")
+            } else {
+                binding.ivLock.visibility = View.GONE
+                binding.cardLog.setCardBackgroundColor(android.graphics.Color.parseColor("#2B2B36")) // Default card_dark
+                binding.cardLog.strokeWidth = 0
+            }
+
             // Optional: color coding based on type
             when (log.type) {
                 "BEHAVIOR_EXECUTION" -> binding.tvActionTitle.setTextColor(android.graphics.Color.parseColor("#4CAF50"))
@@ -46,6 +59,11 @@ class LogAdapter : ListAdapter<LogEntity, LogAdapter.LogViewHolder>(LogDiffCallb
                 "QUEST_COMPLETION" -> binding.tvActionTitle.setTextColor(android.graphics.Color.parseColor("#FFC107"))
                 "QUEST_ABANDON" -> binding.tvActionTitle.setTextColor(android.graphics.Color.parseColor("#F44336"))
                 else -> binding.tvActionTitle.setTextColor(android.graphics.Color.parseColor("#BB86FC"))
+            }
+
+            binding.root.setOnLongClickListener {
+                onLogLongClick(log)
+                true
             }
         }
     }

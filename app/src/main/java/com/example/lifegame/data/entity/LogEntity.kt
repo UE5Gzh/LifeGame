@@ -10,5 +10,6 @@ data class LogEntity(
     val type: String,
     val title: String,
     val details: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val isLocked: Boolean = false
 )
