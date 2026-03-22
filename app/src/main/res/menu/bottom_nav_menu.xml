@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/attributeFragment"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        android:title="@string/nav_attribute" />
+    <item
+        android:id="@+id/behaviorFragment"
+        android:icon="@android:drawable/ic_menu_sort_by_size"
+        android:title="@string/nav_behavior" />
+    <item
+        android:id="@+id/questFragment"
+        android:icon="@android:drawable/btn_star"
+        android:title="@string/nav_quest" />
+    <item
+        android:id="@+id/logFragment"
+        android:icon="@android:drawable/ic_menu_today"
+        android:title="@string/nav_log" />
+</menu>

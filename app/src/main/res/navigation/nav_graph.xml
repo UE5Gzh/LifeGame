@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/attributeFragment">
+
+    <fragment
+        android:id="@+id/attributeFragment"
+        android:name="com.example.lifegame.ui.attribute.AttributeFragment"
+        android:label="@string/title_attribute"
+        tools:layout="@layout/fragment_attribute" />
+
+    <fragment
+        android:id="@+id/behaviorFragment"
+        android:name="com.example.lifegame.ui.behavior.BehaviorFragment"
+        android:label="@string/title_behavior"
+        tools:layout="@layout/fragment_behavior" />
+
+    <fragment
+        android:id="@+id/questFragment"
+        android:name="com.example.lifegame.ui.quest.QuestFragment"
+        android:label="@string/title_quest"
+        tools:layout="@layout/fragment_quest" />
+
+    <fragment
+        android:id="@+id/logFragment"
+        android:name="com.example.lifegame.ui.log.LogFragment"
+        android:label="@string/title_log"
+        tools:layout="@layout/fragment_log" />
+</navigation>
