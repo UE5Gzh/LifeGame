@@ -18,11 +18,12 @@ class LogRepository @Inject constructor(
 
     val allLogs: Flow<List<LogEntity>> = logDao.getAllLogs()
 
-    suspend fun insertLog(type: String, title: String, details: String) {
+    suspend fun insertLog(type: String, title: String, details: String, isLocked: Boolean = false) {
         val log = LogEntity(
             type = type,
             title = title,
-            details = details
+            details = details,
+            isLocked = isLocked
         )
         logDao.insertLog(log)
         checkAndEnforceLimit()

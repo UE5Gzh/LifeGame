@@ -1,22 +1,29 @@
 package com.example.lifegame.ui.log
 
+import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import android.widget.EditText
-import android.widget.Toast
+import androidx.recyclerview.widget.LinearSmoothScroller
+import androidx.recyclerview.widget.RecyclerView
 import com.example.lifegame.data.entity.LogEntity
 import com.example.lifegame.databinding.FragmentLogBinding
 import com.example.lifegame.ui.base.BaseFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @AndroidEntryPoint
 class LogFragment : BaseFragment<FragmentLogBinding>() {
@@ -44,6 +51,10 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
             adapter = logAdapter
         }
 
+        binding.btnAdd.setOnClickListener {
+            showAddLogDialog()
+        }
+
         binding.btnClear.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                 .setTitle("清空日志")
@@ -53,6 +64,10 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
                 }
                 .setNegativeButton("取消", null)
                 .show()
+        }
+
+        binding.btnSearch.setOnClickListener {
+            showDatePickerForSearch()
         }
 
         binding.btnSettings.setOnClickListener {
@@ -73,6 +88,69 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
                 }
             }
             .show()
+    }
+
+    private fun showAddLogDialog() {
+        val editText = EditText(requireContext()).apply {
+            hint = "输入你的想法..."
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 3
+            maxLines = 10
+            gravity = android.view.Gravity.TOP or android.view.Gravity.START
+        }
+
+        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setTitle("写日志")
+            .setView(editText)
+            .setPositiveButton("保存") { _, _ ->
+                val content = editText.text.toString().trim()
+                if (content.isNotEmpty()) {
+                    viewModel.insertCustomLog(content)
+                    Toast.makeText(requireContext(), "日志已保存并锁定", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(requireContext(), "内容不能为空", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showDatePickerForSearch() {
+        val calendar = Calendar.getInstance()
+        DatePickerDialog(
+            requireContext(),
+            { _, year, month, dayOfMonth ->
+                val selectedCalendar = Calendar.getInstance().apply {
+                    set(year, month, dayOfMonth)
+                }
+                scrollToDate(selectedCalendar.time)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun scrollToDate(date: Date) {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val targetDateStr = dateFormat.format(date)
+        val logs = logAdapter.currentList
+        
+        val targetPosition = logs.indexOfFirst { log ->
+            dateFormat.format(Date(log.timestamp)) == targetDateStr
+        }
+
+        if (targetPosition != -1) {
+            val smoothScroller = object : LinearSmoothScroller(requireContext()) {
+                override fun getVerticalSnapPreference(): Int {
+                    return SNAP_TO_START
+                }
+            }
+            smoothScroller.targetPosition = targetPosition
+            binding.rvLogs.layoutManager?.startSmoothScroll(smoothScroller)
+        } else {
+            Toast.makeText(requireContext(), "该日期无日志记录", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun showSettingsDialog() {

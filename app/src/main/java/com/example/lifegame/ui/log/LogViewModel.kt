@@ -23,6 +23,17 @@ class LogViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    fun insertCustomLog(content: String) {
+        viewModelScope.launch {
+            logRepository.insertLog(
+                type = "CUSTOM_NOTE",
+                title = "我的笔记",
+                details = content,
+                isLocked = true
+            )
+        }
+    }
+
     fun clearLogs() {
         viewModelScope.launch {
             logRepository.clearLogs()
