@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface BehaviorDao {
     @Transaction
-    @Query("SELECT * FROM behaviors")
+    @Query("SELECT * FROM behaviors ORDER BY sortOrder ASC")
     fun getAllBehaviorsWithModifiers(): Flow<List<BehaviorWithModifiers>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -23,6 +23,9 @@ interface BehaviorDao {
 
     @Update
     suspend fun updateBehavior(behavior: BehaviorEntity)
+
+    @Update
+    suspend fun updateBehaviors(behaviors: List<BehaviorEntity>)
 
     @Delete
     suspend fun deleteBehavior(behavior: BehaviorEntity)

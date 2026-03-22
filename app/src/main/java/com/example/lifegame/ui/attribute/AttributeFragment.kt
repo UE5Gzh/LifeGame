@@ -1,6 +1,7 @@
 package com.example.lifegame.ui.attribute
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -10,7 +11,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.os.Bundle
 import com.example.lifegame.databinding.DialogAddAttributeBinding
 import com.example.lifegame.databinding.DialogEditAttributeBinding
@@ -29,6 +32,8 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
 
     private val viewModel: AttributeViewModel by viewModels()
     private lateinit var adapter: AttributeAdapter
+    private var isSortMode = false
+    private var itemTouchHelper: ItemTouchHelper? = null
 
     override fun getViewBinding(
         inflater: LayoutInflater,
@@ -48,6 +53,36 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         binding.btnInit.setOnClickListener {
             showResetConfirmationDialog()
         }
+
+        binding.btnSort.setOnClickListener {
+            toggleSortMode()
+        }
+    }
+
+    private fun toggleSortMode() {
+        isSortMode = !isSortMode
+        adapter.isSortMode = isSortMode
+        if (isSortMode) {
+            binding.btnSort.setImageResource(android.R.drawable.ic_menu_save)
+            binding.btnAdd.visibility = View.GONE
+            binding.btnInit.visibility = View.GONE
+            itemTouchHelper?.attachToRecyclerView(binding.rvAttributes)
+        } else {
+            binding.btnSort.setImageResource(android.R.drawable.ic_menu_sort_by_size)
+            binding.btnAdd.visibility = View.VISIBLE
+            binding.btnInit.visibility = View.VISIBLE
+            itemTouchHelper?.attachToRecyclerView(null)
+            saveSortOrder()
+        }
+    }
+
+    private fun saveSortOrder() {
+        val currentList = adapter.currentList
+        val updatedAttributes = currentList.mapIndexed { index, attributeWithRanks ->
+            attributeWithRanks.attribute.copy(sortOrder = index)
+        }
+        viewModel.updateAttributeSortOrders(updatedAttributes)
+        Toast.makeText(requireContext(), "排序已保存", Toast.LENGTH_SHORT).show()
     }
 
     override fun observeData() {
@@ -64,14 +99,40 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
     private fun setupRecyclerView() {
         adapter = AttributeAdapter(
             onAttributeClick = { attributeWithRanks ->
-                showEditAttributeDialog(attributeWithRanks.attribute)
+                if (!isSortMode) {
+                    showEditAttributeDialog(attributeWithRanks.attribute)
+                }
             },
             onAttributeLongClick = { attributeWithRanks ->
-                showDeleteAttributeDialog(attributeWithRanks.attribute)
+                if (!isSortMode) {
+                    showDeleteAttributeDialog(attributeWithRanks.attribute)
+                }
             }
         )
         binding.rvAttributes.layoutManager = LinearLayoutManager(requireContext())
         binding.rvAttributes.adapter = adapter
+
+        val touchHelperCallback = object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val fromPosition = viewHolder.adapterPosition
+                val toPosition = target.adapterPosition
+                adapter.swapItems(fromPosition, toPosition)
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+            
+            override fun isLongPressDragEnabled(): Boolean {
+                return isSortMode
+            }
+        }
+        itemTouchHelper = ItemTouchHelper(touchHelperCallback)
     }
 
     private fun showDeleteAttributeDialog(attribute: AttributeEntity) {

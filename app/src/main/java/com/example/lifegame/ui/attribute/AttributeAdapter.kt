@@ -9,11 +9,24 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.databinding.ItemAttributeBinding
+import java.util.Collections
 
 class AttributeAdapter(
     private val onAttributeClick: (AttributeWithRanks) -> Unit,
     private val onAttributeLongClick: (AttributeWithRanks) -> Unit
 ) : ListAdapter<AttributeWithRanks, AttributeAdapter.AttributeViewHolder>(AttributeDiffCallback()) {
+
+    var isSortMode = false
+        set(value) {
+            field = value
+            notifyDataSetChanged()
+        }
+
+    fun swapItems(fromPosition: Int, toPosition: Int) {
+        val currentList = currentList.toMutableList()
+        Collections.swap(currentList, fromPosition, toPosition)
+        submitList(currentList)
+    }
 
     inner class AttributeViewHolder(private val binding: ItemAttributeBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -44,13 +57,19 @@ class AttributeAdapter(
                 binding.tvProgress.visibility = View.GONE
             }
 
-            binding.root.setOnClickListener {
-                onAttributeClick(item)
-            }
-
-            binding.root.setOnLongClickListener {
-                onAttributeLongClick(item)
-                true
+            if (isSortMode) {
+                binding.ivDragHandle.visibility = View.VISIBLE
+                binding.root.setOnClickListener(null)
+                binding.root.setOnLongClickListener(null)
+            } else {
+                binding.ivDragHandle.visibility = View.GONE
+                binding.root.setOnClickListener {
+                    onAttributeClick(item)
+                }
+                binding.root.setOnLongClickListener {
+                    onAttributeLongClick(item)
+                    true
+                }
             }
         }
     }

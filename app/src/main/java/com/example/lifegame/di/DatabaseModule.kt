@@ -13,6 +13,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+import com.example.lifegame.data.dao.BehaviorGroupDao
+
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
@@ -40,5 +42,10 @@ object DatabaseModule {
     @Provides
     fun provideBehaviorDao(appDatabase: AppDatabase): BehaviorDao {
         return appDatabase.behaviorDao()
+    }
+
+    @Provides
+    fun provideBehaviorGroupDao(appDatabase: AppDatabase): BehaviorGroupDao {
+        return appDatabase.behaviorGroupDao()
     }
 }

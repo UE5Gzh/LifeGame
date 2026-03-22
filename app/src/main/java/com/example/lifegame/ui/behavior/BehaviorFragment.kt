@@ -10,16 +10,22 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.lifegame.R
 import com.example.lifegame.data.entity.AttributeWithRanks
+import com.example.lifegame.data.entity.BehaviorGroupEntity
 import com.example.lifegame.databinding.DialogAddBehaviorBinding
+import com.example.lifegame.databinding.DialogAddGroupBinding
+import com.example.lifegame.databinding.DialogManageGroupsBinding
 import com.example.lifegame.databinding.FragmentBehaviorBinding
 import com.example.lifegame.databinding.ItemBehaviorAttributeModifierBinding
 import com.example.lifegame.ui.base.BaseFragment
 import com.example.lifegame.data.entity.BehaviorWithModifiers
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -28,12 +34,59 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
 
     private val viewModel: BehaviorViewModel by viewModels()
     private lateinit var adapter: BehaviorAdapter
+    private var isSortMode = false
+    private var itemTouchHelper: ItemTouchHelper? = null
+    private var currentSelectedGroupId: Long? = null // null means "All"
 
     override fun getViewBinding(
         inflater: LayoutInflater,
         container: ViewGroup?
     ): FragmentBehaviorBinding {
         return FragmentBehaviorBinding.inflate(inflater, container, false)
+    }
+
+    private fun showBehaviorOptionsDialog(behaviorWithModifiers: BehaviorWithModifiers) {
+        val options = arrayOf("移动到分组...", "删除行为")
+        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setTitle(behaviorWithModifiers.behavior.name)
+            .setItems(options) { _, which ->
+                when (val option = options[which]) {
+                    "移动到分组..." -> {
+                        showMoveToGroupDialog(behaviorWithModifiers)
+                    }
+                    "删除行为" -> {
+                        showDeleteBehaviorDialog(behaviorWithModifiers)
+                    }
+                }
+            }
+            .show()
+    }
+
+    private fun showMoveToGroupDialog(behaviorWithModifiers: BehaviorWithModifiers) {
+        val availableGroups = viewModel.behaviorGroups.value
+        val groupNames = mutableListOf("未分组")
+        groupNames.addAll(availableGroups.map { it.name })
+
+        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setTitle("移动到分组")
+            .setItems(groupNames.toTypedArray()) { _, which ->
+                val groupId = if (which > 0) availableGroups[which - 1].id else null
+                
+                // Copy modifiers
+                val modifiers = behaviorWithModifiers.modifiers.map { Pair(it.attributeId, it.valueChange) }
+                val behavior = behaviorWithModifiers.behavior
+                
+                viewModel.updateBehavior(
+                    behavior.id,
+                    behavior.name,
+                    behavior.energyType,
+                    behavior.energyValue,
+                    behavior.focusDuration,
+                    groupId,
+                    modifiers
+                )
+            }
+            .show()
     }
 
     private fun showDeleteBehaviorDialog(behaviorWithModifiers: BehaviorWithModifiers) {
@@ -53,7 +106,30 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         dialog.setContentView(dialogBinding.root)
         dialogBinding.tvDialogTitle.text = "修改行为"
 
+        val availableGroups = viewModel.behaviorGroups.value
+        val groupNames = mutableListOf("未分组")
+        groupNames.addAll(availableGroups.map { it.name })
+        
+        val groupAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            groupNames
+        )
+        groupAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        dialogBinding.spinnerGroup.adapter = groupAdapter
+
         val behavior = behaviorWithModifiers.behavior
+        
+        // set group selection
+        if (behavior.groupId != null) {
+            val index = availableGroups.indexOfFirst { it.id == behavior.groupId }
+            if (index >= 0) {
+                dialogBinding.spinnerGroup.setSelection(index + 1) // +1 because "未分组" is at 0
+            }
+        } else {
+            dialogBinding.spinnerGroup.setSelection(0)
+        }
+
         dialogBinding.etName.setText(behavior.name)
         if (behavior.energyType == 0) {
             dialogBinding.rbConsume.isChecked = true
@@ -125,6 +201,9 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
 
             val energyValue = energyValueStr?.toIntOrNull() ?: 10
             val focusDuration = focusDurationStr?.toIntOrNull() ?: 0
+            
+            val selectedGroupPos = dialogBinding.spinnerGroup.selectedItemPosition
+            val groupId = if (selectedGroupPos > 0) availableGroups[selectedGroupPos - 1].id else null
 
             val modifiers = mutableListOf<Pair<Long, Int>>()
             for (i in 0 until dialogBinding.llAttributesContainer.childCount) {
@@ -142,7 +221,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                 }
             }
 
-            viewModel.updateBehavior(behavior.id, name, energyType, energyValue, focusDuration, modifiers)
+            viewModel.updateBehavior(behavior.id, name, energyType, energyValue, focusDuration, groupId, modifiers)
             dialog.dismiss()
         }
 
@@ -172,6 +251,103 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             showSetMaxEnergyDialog()
             true
         }
+
+        binding.btnList.setOnClickListener {
+            toggleSortMode()
+        }
+
+        binding.btnGroupManage.setOnClickListener {
+            showManageGroupsDialog()
+        }
+
+        setupTabLayout()
+    }
+
+    private fun setupTabLayout() {
+        binding.tabGroups.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                currentSelectedGroupId = tab?.tag as? Long
+                filterBehaviors()
+            }
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
+    }
+
+    private fun filterBehaviors() {
+        val allBehaviors = viewModel.behaviors.value
+        val filtered = if (currentSelectedGroupId == null) {
+            allBehaviors
+        } else if (currentSelectedGroupId == -1L) {
+            // Uncategorized
+            allBehaviors.filter { it.behavior.groupId == null }
+        } else {
+            allBehaviors.filter { it.behavior.groupId == currentSelectedGroupId }
+        }
+        adapter.submitList(filtered)
+    }
+
+    private fun updateTabs(groups: List<BehaviorGroupEntity>, behaviors: List<BehaviorWithModifiers>) {
+        binding.tabGroups.removeAllTabs()
+        
+        // "All" Tab
+        val allTab = binding.tabGroups.newTab()
+        allTab.text = "全部 (${behaviors.size})"
+        allTab.tag = null
+        binding.tabGroups.addTab(allTab)
+
+        // Custom Groups
+        for (group in groups) {
+            val count = behaviors.count { it.behavior.groupId == group.id }
+            val tab = binding.tabGroups.newTab()
+            tab.text = "${group.name} ($count)"
+            tab.tag = group.id
+            binding.tabGroups.addTab(tab)
+        }
+
+        // Uncategorized Tab (optional, can just use All, but prompt asks for Uncategorized conceptually)
+        // Let's add Uncategorized if there are any
+        val uncategorizedCount = behaviors.count { it.behavior.groupId == null }
+        if (uncategorizedCount > 0) {
+            val uncatTab = binding.tabGroups.newTab()
+            uncatTab.text = "未分组 ($uncategorizedCount)"
+            uncatTab.tag = -1L
+            binding.tabGroups.addTab(uncatTab)
+        }
+
+        // Restore selection
+        val tabCount = binding.tabGroups.tabCount
+        for (i in 0 until tabCount) {
+            val tab = binding.tabGroups.getTabAt(i)
+            if (tab?.tag == currentSelectedGroupId) {
+                tab?.select()
+                return
+            }
+        }
+    }
+
+    private fun toggleSortMode() {
+        isSortMode = !isSortMode
+        adapter.isSortMode = isSortMode
+        if (isSortMode) {
+            binding.btnList.setImageResource(android.R.drawable.ic_menu_save)
+            binding.btnAdd.visibility = View.GONE
+            itemTouchHelper?.attachToRecyclerView(binding.rvBehaviors)
+        } else {
+            binding.btnList.setImageResource(android.R.drawable.ic_menu_sort_by_size)
+            binding.btnAdd.visibility = View.VISIBLE
+            itemTouchHelper?.attachToRecyclerView(null)
+            saveSortOrder()
+        }
+    }
+
+    private fun saveSortOrder() {
+        val currentList = adapter.currentList
+        val updatedBehaviors = currentList.mapIndexed { index, behaviorWithModifiers ->
+            behaviorWithModifiers.behavior.copy(sortOrder = index)
+        }
+        viewModel.updateBehaviorSortOrders(updatedBehaviors)
+        Toast.makeText(requireContext(), "排序已保存", Toast.LENGTH_SHORT).show()
     }
 
     private fun showSetMaxEnergyDialog() {
@@ -199,18 +375,46 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     private fun setupRecyclerView() {
         adapter = BehaviorAdapter(
             onActionClick = { behavior ->
-                viewModel.executeBehavior(behavior)
-                Toast.makeText(requireContext(), "执行了: ${behavior.behavior.name}", Toast.LENGTH_SHORT).show()
+                if (!isSortMode) {
+                    viewModel.executeBehavior(behavior)
+                    Toast.makeText(requireContext(), "执行了: ${behavior.behavior.name}", Toast.LENGTH_SHORT).show()
+                }
             },
             onItemClick = { behavior ->
-                showEditBehaviorDialog(behavior)
+                if (!isSortMode) {
+                    showEditBehaviorDialog(behavior)
+                }
             },
             onItemLongClick = { behavior ->
-                showDeleteBehaviorDialog(behavior)
+                if (!isSortMode) {
+                    showBehaviorOptionsDialog(behavior)
+                }
             }
         )
         binding.rvBehaviors.layoutManager = LinearLayoutManager(requireContext())
         binding.rvBehaviors.adapter = adapter
+
+        val touchHelperCallback = object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val fromPosition = viewHolder.adapterPosition
+                val toPosition = target.adapterPosition
+                adapter.swapItems(fromPosition, toPosition)
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+            
+            override fun isLongPressDragEnabled(): Boolean {
+                return isSortMode
+            }
+        }
+        itemTouchHelper = ItemTouchHelper(touchHelperCallback)
     }
 
     override fun observeData() {
@@ -224,7 +428,14 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                 }
                 launch {
                     viewModel.behaviors.collect { behaviors ->
-                        adapter.submitList(behaviors)
+                        updateTabs(viewModel.behaviorGroups.value, behaviors)
+                        filterBehaviors()
+                    }
+                }
+                launch {
+                    viewModel.behaviorGroups.collect { groups ->
+                        updateTabs(groups, viewModel.behaviors.value)
+                        filterBehaviors()
                     }
                 }
                 launch {
@@ -243,6 +454,118 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         }
     }
 
+    private fun showManageGroupsDialog() {
+        val dialogBinding = DialogManageGroupsBinding.inflate(layoutInflater)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(dialogBinding.root)
+
+        val groupAdapter = BehaviorGroupAdapter(
+            onEditClick = { group ->
+                showEditGroupDialog(group)
+            },
+            onDeleteClick = { group ->
+                MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                    .setTitle("删除分组")
+                    .setMessage("确定要删除分组「${group.name}」吗？组内行为将被移至未分组。")
+                    .setPositiveButton("删除") { _, _ ->
+                        viewModel.deleteGroup(group)
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
+            }
+        )
+        dialogBinding.rvGroups.layoutManager = LinearLayoutManager(requireContext())
+        dialogBinding.rvGroups.adapter = groupAdapter
+
+        val touchHelperCallback = object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val fromPosition = viewHolder.adapterPosition
+                val toPosition = target.adapterPosition
+                groupAdapter.swapItems(fromPosition, toPosition)
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+        }
+        ItemTouchHelper(touchHelperCallback).attachToRecyclerView(dialogBinding.rvGroups)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.behaviorGroups.collect { groups ->
+                    groupAdapter.submitList(groups)
+                }
+            }
+        }
+
+        dialogBinding.btnAddGroup.setOnClickListener {
+            showAddGroupDialog()
+        }
+
+        dialogBinding.btnClose.setOnClickListener {
+            // Save sort order
+            val updatedGroups = groupAdapter.currentList.mapIndexed { index, group ->
+                group.copy(sortOrder = index)
+            }
+            viewModel.updateGroupSortOrders(updatedGroups)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showAddGroupDialog() {
+        val dialogBinding = DialogAddGroupBinding.inflate(layoutInflater)
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            val name = dialogBinding.etGroupName.text?.toString()?.trim()
+            if (!name.isNullOrEmpty()) {
+                viewModel.addGroup(name)
+                dialog.dismiss()
+            } else {
+                Toast.makeText(requireContext(), "请输入分组名称", Toast.LENGTH_SHORT).show()
+            }
+        }
+        dialog.show()
+    }
+
+    private fun showEditGroupDialog(group: BehaviorGroupEntity) {
+        val dialogBinding = DialogAddGroupBinding.inflate(layoutInflater)
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.tvTitle.text = "修改分组"
+        dialogBinding.etGroupName.setText(group.name)
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            val name = dialogBinding.etGroupName.text?.toString()?.trim()
+            if (!name.isNullOrEmpty()) {
+                viewModel.updateGroup(group.copy(name = name))
+                dialog.dismiss()
+            } else {
+                Toast.makeText(requireContext(), "请输入分组名称", Toast.LENGTH_SHORT).show()
+            }
+        }
+        dialog.show()
+    }
+
     private fun updateEnergyText() {
         val current = viewModel.currentEnergy.value
         val max = viewModel.maxEnergy.value
@@ -255,6 +578,26 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         dialog.setContentView(dialogBinding.root)
 
         val availableAttributes = viewModel.attributes.value
+        val availableGroups = viewModel.behaviorGroups.value
+        
+        val groupNames = mutableListOf("未分组")
+        groupNames.addAll(availableGroups.map { it.name })
+        
+        val groupAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            groupNames
+        )
+        groupAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        dialogBinding.spinnerGroup.adapter = groupAdapter
+
+        // set default group to current selected if not "All"
+        if (currentSelectedGroupId != null) {
+            val index = availableGroups.indexOfFirst { it.id == currentSelectedGroupId }
+            if (index >= 0) {
+                dialogBinding.spinnerGroup.setSelection(index + 1)
+            }
+        }
 
         // Helper to add an attribute modifier row
         fun addAttributeRow() {
@@ -309,6 +652,9 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             val energyValue = energyValueStr?.toIntOrNull() ?: 10
             val focusDuration = focusDurationStr?.toIntOrNull() ?: 0
 
+            val selectedGroupPos = dialogBinding.spinnerGroup.selectedItemPosition
+            val groupId = if (selectedGroupPos > 0) availableGroups[selectedGroupPos - 1].id else null
+
             val modifiers = mutableListOf<Pair<Long, Int>>()
             for (i in 0 until dialogBinding.llAttributesContainer.childCount) {
                 val child = dialogBinding.llAttributesContainer.getChildAt(i)
@@ -325,7 +671,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                 }
             }
 
-            viewModel.addBehavior(name, energyType, energyValue, focusDuration, modifiers)
+            viewModel.addBehavior(name, energyType, energyValue, focusDuration, groupId, modifiers)
             dialog.dismiss()
         }
 

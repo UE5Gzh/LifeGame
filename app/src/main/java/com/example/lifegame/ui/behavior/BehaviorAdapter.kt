@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -11,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.data.entity.BehaviorWithModifiers
 import com.example.lifegame.databinding.ItemBehaviorBinding
+import java.util.Collections
 
 class BehaviorAdapter(
     private val onActionClick: (BehaviorWithModifiers) -> Unit,
@@ -20,9 +22,21 @@ class BehaviorAdapter(
 
     private var attributes: List<AttributeWithRanks> = emptyList()
 
+    var isSortMode = false
+        set(value) {
+            field = value
+            notifyDataSetChanged()
+        }
+
     fun setAttributes(newAttributes: List<AttributeWithRanks>) {
         attributes = newAttributes
         notifyDataSetChanged()
+    }
+
+    fun swapItems(fromPosition: Int, toPosition: Int) {
+        val currentList = currentList.toMutableList()
+        Collections.swap(currentList, fromPosition, toPosition)
+        submitList(currentList)
     }
 
     inner class BehaviorViewHolder(private val binding: ItemBehaviorBinding) :
@@ -72,24 +86,33 @@ class BehaviorAdapter(
 
             binding.tvEffects.text = builder
 
-            // Action button
-            if (behavior.focusDuration == 0) {
-                binding.btnAction.text = "执行"
+            if (isSortMode) {
+                binding.ivDragHandle.visibility = View.VISIBLE
+                binding.btnAction.visibility = View.GONE
+                binding.root.setOnClickListener(null)
+                binding.root.setOnLongClickListener(null)
             } else {
-                binding.btnAction.text = "专注 ${behavior.focusDuration}m"
-            }
+                binding.ivDragHandle.visibility = View.GONE
+                binding.btnAction.visibility = View.VISIBLE
+                // Action button
+                if (behavior.focusDuration == 0) {
+                    binding.btnAction.text = "执行"
+                } else {
+                    binding.btnAction.text = "专注 ${behavior.focusDuration}m"
+                }
 
-            binding.btnAction.setOnClickListener {
-                onActionClick(item)
-            }
+                binding.btnAction.setOnClickListener {
+                    onActionClick(item)
+                }
 
-            binding.root.setOnClickListener {
-                onItemClick(item)
-            }
+                binding.root.setOnClickListener {
+                    onItemClick(item)
+                }
 
-            binding.root.setOnLongClickListener {
-                onItemLongClick(item)
-                true
+                binding.root.setOnLongClickListener {
+                    onItemLongClick(item)
+                    true
+                }
             }
         }
     }

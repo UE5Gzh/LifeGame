@@ -10,18 +10,23 @@ import com.example.lifegame.data.entity.BehaviorAttributeModifierEntity
 import com.example.lifegame.data.entity.BehaviorEntity
 import com.example.lifegame.data.entity.RankEntity
 
+import com.example.lifegame.data.dao.BehaviorGroupDao
+import com.example.lifegame.data.entity.BehaviorGroupEntity
+
 @Database(
     entities = [
         AttributeEntity::class, 
         RankEntity::class,
         BehaviorEntity::class,
-        BehaviorAttributeModifierEntity::class
+        BehaviorAttributeModifierEntity::class,
+        BehaviorGroupEntity::class
     ], 
-    version = 3, 
+    version = 5, 
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun attributeDao(): AttributeDao
     abstract fun rankDao(): RankDao
     abstract fun behaviorDao(): BehaviorDao
+    abstract fun behaviorGroupDao(): BehaviorGroupDao
 }

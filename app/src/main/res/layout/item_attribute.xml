@@ -20,6 +20,18 @@
             android:layout_height="wrap_content"
             android:padding="24dp">
 
+            <ImageView
+                android:id="@+id/iv_drag_handle"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_sort_by_size"
+                app:tint="#80FFFFFF"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:layout_marginEnd="12dp" />
+
             <TextView
                 android:id="@+id/tv_name"
                 android:layout_width="wrap_content"
@@ -27,7 +39,8 @@
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintStart_toEndOf="@id/iv_drag_handle"
+                android:layout_marginStart="8dp"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:text="智商" />
 

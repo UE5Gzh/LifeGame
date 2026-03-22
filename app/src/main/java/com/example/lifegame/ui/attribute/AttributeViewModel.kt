@@ -67,4 +67,10 @@ class AttributeViewModel @Inject constructor(
             repository.resetAllAttributes()
         }
     }
+
+    fun updateAttributeSortOrders(attributes: List<AttributeEntity>) {
+        viewModelScope.launch {
+            repository.updateAttributes(attributes)
+        }
+    }
 }

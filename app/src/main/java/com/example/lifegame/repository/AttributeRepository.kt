@@ -22,6 +22,10 @@ class AttributeRepository @Inject constructor(
         attributeDao.updateAttribute(attribute)
     }
 
+    suspend fun updateAttributes(attributes: List<AttributeEntity>) {
+        attributeDao.updateAttributes(attributes)
+    }
+
     suspend fun deleteAttribute(attribute: AttributeEntity) {
         attributeDao.deleteAttribute(attribute)
     }

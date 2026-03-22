@@ -114,6 +114,23 @@
                 android:text="0" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- 所属分组 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="所属分组"
+            android:textColor="#A0A0A0"
+            android:textSize="14sp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@android:color/white"
+            android:minHeight="48dp" />
+
         <!-- 影响的属性 -->
         <TextView
             android:layout_width="wrap_content"

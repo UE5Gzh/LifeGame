@@ -8,6 +8,7 @@ import com.example.lifegame.data.entity.AttributeEntity
 import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.data.entity.BehaviorAttributeModifierEntity
 import com.example.lifegame.data.entity.BehaviorEntity
+import com.example.lifegame.data.entity.BehaviorGroupEntity
 import com.example.lifegame.data.entity.BehaviorWithModifiers
 import com.example.lifegame.repository.AttributeRepository
 import com.example.lifegame.repository.BehaviorRepository
@@ -44,6 +45,13 @@ class BehaviorViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    val behaviorGroups: StateFlow<List<BehaviorGroupEntity>> = behaviorRepository.allBehaviorGroups
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     val attributes: StateFlow<List<AttributeWithRanks>> = attributeRepository.allAttributesWithRanks
         .stateIn(
             scope = viewModelScope,
@@ -71,6 +79,7 @@ class BehaviorViewModel @Inject constructor(
         energyType: Int,
         energyValue: Int,
         focusDuration: Int,
+        groupId: Long?,
         modifiers: List<Pair<Long, Int>>
     ) {
         viewModelScope.launch {
@@ -78,7 +87,8 @@ class BehaviorViewModel @Inject constructor(
                 name = name,
                 energyType = energyType,
                 energyValue = energyValue,
-                focusDuration = focusDuration
+                focusDuration = focusDuration,
+                groupId = groupId
             )
             val modifierEntities = modifiers.map { (attributeId, valueChange) ->
                 BehaviorAttributeModifierEntity(
@@ -97,6 +107,7 @@ class BehaviorViewModel @Inject constructor(
         energyType: Int,
         energyValue: Int,
         focusDuration: Int,
+        groupId: Long?,
         modifiers: List<Pair<Long, Int>>
     ) {
         viewModelScope.launch {
@@ -105,7 +116,8 @@ class BehaviorViewModel @Inject constructor(
                 name = name,
                 energyType = energyType,
                 energyValue = energyValue,
-                focusDuration = focusDuration
+                focusDuration = focusDuration,
+                groupId = groupId
             )
             val modifierEntities = modifiers.map { (attributeId, valueChange) ->
                 BehaviorAttributeModifierEntity(
@@ -121,6 +133,12 @@ class BehaviorViewModel @Inject constructor(
     fun deleteBehavior(behavior: BehaviorEntity) {
         viewModelScope.launch {
             behaviorRepository.deleteBehavior(behavior)
+        }
+    }
+
+    fun updateBehaviorSortOrders(behaviors: List<BehaviorEntity>) {
+        viewModelScope.launch {
+            behaviorRepository.updateBehaviors(behaviors)
         }
     }
 
@@ -161,6 +179,31 @@ class BehaviorViewModel @Inject constructor(
         if (_currentEnergy.value > newMax) {
             _currentEnergy.value = newMax
             sharedPreferences.edit().putInt("current_energy", newMax).apply()
+        }
+    }
+
+    // --- Group Management ---
+    fun addGroup(name: String, colorHex: String = "") {
+        viewModelScope.launch {
+            behaviorRepository.insertGroup(BehaviorGroupEntity(name = name, colorHex = colorHex))
+        }
+    }
+
+    fun updateGroup(group: BehaviorGroupEntity) {
+        viewModelScope.launch {
+            behaviorRepository.updateGroup(group)
+        }
+    }
+
+    fun updateGroupSortOrders(groups: List<BehaviorGroupEntity>) {
+        viewModelScope.launch {
+            behaviorRepository.updateGroups(groups)
+        }
+    }
+
+    fun deleteGroup(group: BehaviorGroupEntity) {
+        viewModelScope.launch {
+            behaviorRepository.deleteGroup(group)
         }
     }
 }

@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface AttributeDao {
     @Transaction
-    @Query("SELECT * FROM attributes")
+    @Query("SELECT * FROM attributes ORDER BY sortOrder ASC")
     fun getAllAttributesWithRanks(): Flow<List<AttributeWithRanks>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -22,6 +22,9 @@ interface AttributeDao {
 
     @Update
     suspend fun updateAttribute(attribute: AttributeEntity)
+
+    @Update
+    suspend fun updateAttributes(attributes: List<AttributeEntity>)
 
     @Delete
     suspend fun deleteAttribute(attribute: AttributeEntity)
