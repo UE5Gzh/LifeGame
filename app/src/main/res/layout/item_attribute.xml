@@ -8,11 +8,17 @@
     app:cardCornerRadius="12dp"
     app:cardElevation="0dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/cl_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="24dp">
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="24dp">
 
         <TextView
             android:id="@+id/tv_name"
@@ -36,5 +42,6 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:text="10" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
 </com.google.android.material.card.MaterialCardView>

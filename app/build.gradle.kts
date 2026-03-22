@@ -14,8 +14,8 @@ android {
         applicationId = "com.example.lifegame"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 5
+        versionName = "1.0.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -48,6 +48,16 @@ android {
     }
     buildFeatures {
         viewBinding = true
+    }
+
+    applicationVariants.all {
+        val variant = this
+        variant.outputs
+            .map { it as com.android.build.gradle.internal.api.ApkVariantOutputImpl }
+            .forEach { output ->
+                val outputFileName = "LifeGame_${variant.versionName}.apk"
+                output.outputFileName = outputFileName
+            }
     }
 }
 
