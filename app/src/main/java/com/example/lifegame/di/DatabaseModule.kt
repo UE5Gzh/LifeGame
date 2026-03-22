@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.lifegame.data.dao.AttributeDao
 import com.example.lifegame.data.dao.BehaviorDao
+import com.example.lifegame.data.dao.QuestDao
 import com.example.lifegame.data.dao.RankDao
 import com.example.lifegame.data.local.AppDatabase
 import dagger.Module
@@ -47,5 +48,10 @@ object DatabaseModule {
     @Provides
     fun provideBehaviorGroupDao(appDatabase: AppDatabase): BehaviorGroupDao {
         return appDatabase.behaviorGroupDao()
+    }
+
+    @Provides
+    fun provideQuestDao(appDatabase: AppDatabase): QuestDao {
+        return appDatabase.questDao()
     }
 }

@@ -12,6 +12,7 @@ import com.example.lifegame.data.entity.BehaviorGroupEntity
 import com.example.lifegame.data.entity.BehaviorWithModifiers
 import com.example.lifegame.repository.AttributeRepository
 import com.example.lifegame.repository.BehaviorRepository
+import com.example.lifegame.repository.QuestRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +28,7 @@ import javax.inject.Inject
 class BehaviorViewModel @Inject constructor(
     private val behaviorRepository: BehaviorRepository,
     private val attributeRepository: AttributeRepository,
+    private val questRepository: QuestRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -163,6 +165,9 @@ class BehaviorViewModel @Inject constructor(
                     attributeRepository.updateAttribute(attributeToUpdate.copy(currentValue = newValue))
                 }
             }
+
+            // Update quest behavior goals
+            questRepository.incrementBehaviorGoalCount(behavior.id)
         }
     }
 

@@ -12,20 +12,18 @@
         android:padding="20dp">
 
         <TextView
-            android:id="@+id/tvDialogTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="新增行动"
+            android:text="新增任务"
             android:textColor="@android:color/white"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:layout_marginBottom="20dp" />
+            android:layout_marginBottom="16dp" />
 
-        <!-- 行动名称 -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="行动名称(如:冥想)"
+            android:hint="任务名称"
             app:hintTextColor="#A0A0A0"
             app:boxStrokeColor="#A0A0A0"
             android:textColorHint="#A0A0A0"
@@ -39,133 +37,175 @@
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- 精力变化类型 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="精力变化"
+            android:text="任务类型"
             android:textColor="#A0A0A0"
             android:textSize="14sp"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp"/>
 
         <RadioGroup
-            android:id="@+id/rgEnergyType"
+            android:id="@+id/rgType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
             <RadioButton
-                android:id="@+id/rbConsume"
+                android:id="@+id/rbDaily"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="消耗精力"
+                android:text="日常"
                 android:textColor="@android:color/white"
                 android:buttonTint="@android:color/white"
                 android:checked="true"
-                android:layout_marginEnd="24dp"/>
+                android:layout_marginEnd="16dp"/>
 
             <RadioButton
-                android:id="@+id/rbRestore"
+                android:id="@+id/rbMain"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="恢复精力"
+                android:text="主线"
+                android:buttonTint="@android:color/white"
+                android:layout_marginEnd="16dp"
+                android:textColor="@android:color/white" />
+
+            <RadioButton
+                android:id="@+id/rbSide"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="支线"
                 android:buttonTint="@android:color/white"
                 android:textColor="@android:color/white" />
         </RadioGroup>
 
-        <!-- 精力数值 -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="精力数值"
-            app:hintTextColor="#A0A0A0"
-            app:boxStrokeColor="#A0A0A0"
-            android:textColorHint="#A0A0A0"
-            android:layout_marginTop="16dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etEnergyValue"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@android:color/white"
-                android:inputType="number"
-                android:text="10" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- 专注时长 -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="专注时长(分钟，0表示即时完成)"
-            app:hintTextColor="#A0A0A0"
-            app:boxStrokeColor="#A0A0A0"
-            android:textColorHint="#A0A0A0"
-            android:layout_marginTop="16dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etFocusDuration"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@android:color/white"
-                android:inputType="number"
-                android:text="0" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- 所属分组 -->
         <TextView
+            android:id="@+id/tvDeadlineLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="所属分组"
+            android:text="截止日期"
             android:textColor="#A0A0A0"
             android:textSize="14sp"
             android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp"/>
+            android:layout_marginBottom="8dp"
+            android:visibility="gone"/>
 
-        <Spinner
-            android:id="@+id/spinnerGroup"
+        <TextView
+            android:id="@+id/tvDeadline"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:backgroundTint="@android:color/white"
-            android:minHeight="48dp" />
+            android:text="选择日期"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:padding="12dp"
+            android:background="@drawable/bg_progress_energy"
+            android:visibility="gone" />
 
-        <!-- 影响的属性 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="影响的属性"
+            android:text="完成目标"
             android:textColor="#A0A0A0"
             android:textSize="14sp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="24dp"
             android:layout_marginBottom="8dp"/>
 
         <LinearLayout
-            android:id="@+id/llAttributesContainer"
+            android:id="@+id/llGoalsContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
-            <!-- 动态添加 item_behavior_attribute_modifier.xml -->
+            android:orientation="vertical" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddAttrGoal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="+ 属性目标"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                app:strokeColor="#A0A0A0"
+                app:strokeWidth="1dp"
+                android:textColor="@android:color/white"
+                android:layout_marginEnd="4dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddBehGoal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="+ 行动目标"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                app:strokeColor="#A0A0A0"
+                app:strokeWidth="1dp"
+                android:textColor="@android:color/white"
+                android:layout_marginStart="4dp" />
         </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAddAttributeModifier"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="任务奖励"
+            android:textColor="#A0A0A0"
+            android:textSize="14sp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/llRewardsContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="+ 添加影响的属性"
+            android:orientation="vertical" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAddReward"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="+ 添加奖励"
             style="@style/Widget.MaterialComponents.Button.TextButton"
             app:strokeColor="#A0A0A0"
             app:strokeWidth="1dp"
             android:textColor="@android:color/white"
             android:layout_marginTop="8dp" />
 
-        <!-- 底部操作按钮 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="任务惩罚 (可选)"
+            android:textColor="#A0A0A0"
+            android:textSize="14sp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/llPunishmentsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAddPunishment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="+ 添加惩罚"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            app:strokeColor="#A0A0A0"
+            app:strokeWidth="1dp"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="8dp" />
+
+        <!-- Bottom Actions -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="24dp">
+            android:layout_marginTop="32dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCancel"

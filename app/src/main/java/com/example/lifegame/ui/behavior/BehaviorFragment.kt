@@ -46,7 +46,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     }
 
     private fun showBehaviorOptionsDialog(behaviorWithModifiers: BehaviorWithModifiers) {
-        val options = arrayOf("移动到分组...", "删除行为")
+        val options = arrayOf("移动到分组...", "删除行动")
         MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
             .setTitle(behaviorWithModifiers.behavior.name)
             .setItems(options) { _, which ->
@@ -54,7 +54,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                     "移动到分组..." -> {
                         showMoveToGroupDialog(behaviorWithModifiers)
                     }
-                    "删除行为" -> {
+                    "删除行动" -> {
                         showDeleteBehaviorDialog(behaviorWithModifiers)
                     }
                 }
@@ -91,7 +91,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
 
     private fun showDeleteBehaviorDialog(behaviorWithModifiers: BehaviorWithModifiers) {
         MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle("删除行为")
+            .setTitle("删除行动")
             .setMessage("确定要删除「${behaviorWithModifiers.behavior.name}」吗？")
             .setPositiveButton("删除") { _, _ ->
                 viewModel.deleteBehavior(behaviorWithModifiers.behavior)
@@ -104,7 +104,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         val dialogBinding = DialogAddBehaviorBinding.inflate(layoutInflater)
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(dialogBinding.root)
-        dialogBinding.tvDialogTitle.text = "修改行为"
+        dialogBinding.tvDialogTitle.text = "修改行动"
 
         val availableGroups = viewModel.behaviorGroups.value
         val groupNames = mutableListOf("未分组")
@@ -195,7 +195,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             val focusDurationStr = dialogBinding.etFocusDuration.text?.toString()?.trim()
 
             if (name.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "请输入行为名称", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "请输入行动名称", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -466,7 +466,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             onDeleteClick = { group ->
                 MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                     .setTitle("删除分组")
-                    .setMessage("确定要删除分组「${group.name}」吗？组内行为将被移至未分组。")
+                    .setMessage("确定要删除分组「${group.name}」吗？组内行动将被移至未分组。")
                     .setPositiveButton("删除") { _, _ ->
                         viewModel.deleteGroup(group)
                     }
@@ -645,7 +645,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             val focusDurationStr = dialogBinding.etFocusDuration.text?.toString()?.trim()
 
             if (name.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "请输入行为名称", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "请输入行动名称", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

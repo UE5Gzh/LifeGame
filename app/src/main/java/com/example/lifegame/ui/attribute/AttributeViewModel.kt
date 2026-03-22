@@ -54,7 +54,7 @@ class AttributeViewModel @Inject constructor(
         viewModelScope.launch {
             val isReferenced = behaviorRepository.isAttributeReferenced(attribute.id)
             if (isReferenced) {
-                onResult(false, "无法删除：「${attribute.name}」已被某些行为引用")
+                onResult(false, "无法删除：「${attribute.name}」已被某些行动引用")
             } else {
                 repository.deleteAttribute(attribute)
                 onResult(true, "删除成功")

@@ -1,12 +1,12 @@
 <resources>
     <string name="app_name">LifeGame</string>
-    <string name="title_attribute">个人属性</string>
-    <string name="title_behavior">日常行为</string>
-    <string name="title_quest">人生任务</string>
-    <string name="title_log">我的日志</string>
+    <string name="title_attribute">属性</string>
+    <string name="title_behavior">行动</string>
+    <string name="title_quest">任务</string>
+    <string name="title_log">日志</string>
     
     <string name="nav_attribute">属性</string>
-    <string name="nav_behavior">行为</string>
+    <string name="nav_behavior">行动</string>
     <string name="nav_quest">任务</string>
     <string name="nav_log">日志</string>
 
