@@ -1,5 +1,6 @@
 package com.example.lifegame.ui.behavior
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -37,6 +38,19 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     private var isSortMode = false
     private var itemTouchHelper: ItemTouchHelper? = null
     private var currentSelectedGroupId: Long? = null // null means "All"
+
+    private val focusLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val behaviorId = result.data?.getLongExtra("behavior_id", -1L) ?: -1L
+            if (behaviorId != -1L) {
+                val behavior = viewModel.behaviors.value.find { it.behavior.id == behaviorId }
+                if (behavior != null) {
+                    viewModel.executeBehavior(behavior, isFocus = true)
+                    Toast.makeText(requireContext(), "专注完成！执行了: ${behavior.behavior.name}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     override fun getViewBinding(
         inflater: LayoutInflater,
@@ -376,8 +390,17 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         adapter = BehaviorAdapter(
             onActionClick = { behavior ->
                 if (!isSortMode) {
-                    viewModel.executeBehavior(behavior)
-                    Toast.makeText(requireContext(), "执行了: ${behavior.behavior.name}", Toast.LENGTH_SHORT).show()
+                    if (behavior.behavior.focusDuration > 0) {
+                        val intent = Intent(requireContext(), com.example.lifegame.ui.focus.FocusActivity::class.java).apply {
+                            putExtra("behavior_id", behavior.behavior.id)
+                            putExtra("behavior_name", behavior.behavior.name)
+                            putExtra("focus_duration", behavior.behavior.focusDuration)
+                        }
+                        focusLauncher.launch(intent)
+                    } else {
+                        viewModel.executeBehavior(behavior)
+                        Toast.makeText(requireContext(), "执行了: ${behavior.behavior.name}", Toast.LENGTH_SHORT).show()
+                    }
                 }
             },
             onItemClick = { behavior ->

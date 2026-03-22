@@ -13,6 +13,7 @@ import com.example.lifegame.data.entity.BehaviorWithModifiers
 import com.example.lifegame.repository.AttributeRepository
 import com.example.lifegame.repository.BehaviorRepository
 import com.example.lifegame.repository.QuestRepository
+import com.example.lifegame.repository.LogRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,7 @@ class BehaviorViewModel @Inject constructor(
     private val behaviorRepository: BehaviorRepository,
     private val attributeRepository: AttributeRepository,
     private val questRepository: QuestRepository,
+    private val logRepository: LogRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -144,7 +146,7 @@ class BehaviorViewModel @Inject constructor(
         }
     }
 
-    fun executeBehavior(behaviorWithModifiers: BehaviorWithModifiers) {
+    fun executeBehavior(behaviorWithModifiers: BehaviorWithModifiers, isFocus: Boolean = false) {
         viewModelScope.launch {
             // Update Energy
             val behavior = behaviorWithModifiers.behavior
@@ -156,6 +158,9 @@ class BehaviorViewModel @Inject constructor(
             _currentEnergy.value = newEnergy
             sharedPreferences.edit().putInt("current_energy", newEnergy).apply()
 
+            val detailsBuilder = StringBuilder()
+            detailsBuilder.append(if (change >= 0) "精力 +$change" else "精力 $change")
+
             // Apply attribute modifiers
             val currentAttributes = attributeRepository.allAttributesWithRanks.first()
             for (modifier in behaviorWithModifiers.modifiers) {
@@ -163,11 +168,20 @@ class BehaviorViewModel @Inject constructor(
                 if (attributeToUpdate != null) {
                     val newValue = attributeToUpdate.currentValue + modifier.valueChange
                     attributeRepository.updateAttribute(attributeToUpdate.copy(currentValue = newValue))
+                    detailsBuilder.append(", ${attributeToUpdate.name} ${if(modifier.valueChange >= 0) "+" else ""}${modifier.valueChange}")
                 }
             }
 
             // Update quest behavior goals
             questRepository.incrementBehaviorGoalCount(behavior.id)
+            
+            // Log the event
+            val title = if (isFocus) "专注完成: ${behavior.name}" else "执行行动: ${behavior.name}"
+            logRepository.insertLog(
+                type = "BEHAVIOR_EXECUTION",
+                title = title,
+                details = "影响: ${detailsBuilder.toString()}"
+            )
         }
     }
 

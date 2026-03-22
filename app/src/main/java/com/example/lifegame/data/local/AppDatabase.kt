@@ -17,25 +17,30 @@ import com.example.lifegame.data.entity.QuestEffectEntity
 import com.example.lifegame.data.entity.QuestEntity
 import com.example.lifegame.data.entity.RankEntity
 
+import com.example.lifegame.data.dao.LogDao
+import com.example.lifegame.data.entity.LogEntity
+
 @Database(
     entities = [
-        AttributeEntity::class, 
+        AttributeEntity::class,
         RankEntity::class,
+        BehaviorGroupEntity::class,
         BehaviorEntity::class,
         BehaviorAttributeModifierEntity::class,
-        BehaviorGroupEntity::class,
         QuestEntity::class,
         QuestAttributeGoalEntity::class,
         QuestBehaviorGoalEntity::class,
-        QuestEffectEntity::class
-    ], 
-    version = 6, 
+        QuestEffectEntity::class,
+        LogEntity::class
+    ],
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun attributeDao(): AttributeDao
     abstract fun rankDao(): RankDao
-    abstract fun behaviorDao(): BehaviorDao
     abstract fun behaviorGroupDao(): BehaviorGroupDao
+    abstract fun behaviorDao(): BehaviorDao
     abstract fun questDao(): QuestDao
+    abstract fun logDao(): LogDao
 }
