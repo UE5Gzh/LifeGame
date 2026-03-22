@@ -3,6 +3,7 @@ package com.example.lifegame.ui.attribute
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifegame.data.entity.AttributeEntity
+import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.repository.AttributeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,7 +17,7 @@ class AttributeViewModel @Inject constructor(
     private val repository: AttributeRepository
 ) : ViewModel() {
 
-    val attributes: StateFlow<List<AttributeEntity>> = repository.allAttributes
+    val attributesWithRanks: StateFlow<List<AttributeWithRanks>> = repository.allAttributesWithRanks
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -32,6 +33,12 @@ class AttributeViewModel @Inject constructor(
                 colorHex = colorHex
             )
             repository.insertAttribute(newAttribute)
+        }
+    }
+
+    fun updateAttribute(attribute: AttributeEntity) {
+        viewModelScope.launch {
+            repository.updateAttribute(attribute)
         }
     }
 

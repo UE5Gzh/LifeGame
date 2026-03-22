@@ -3,6 +3,7 @@ package com.example.lifegame.di
 import android.content.Context
 import androidx.room.Room
 import com.example.lifegame.data.dao.AttributeDao
+import com.example.lifegame.data.dao.RankDao
 import com.example.lifegame.data.local.AppDatabase
 import dagger.Module
 import dagger.Provides
@@ -22,11 +23,16 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "lifegame_database"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
     fun provideAttributeDao(appDatabase: AppDatabase): AttributeDao {
         return appDatabase.attributeDao()
+    }
+
+    @Provides
+    fun provideRankDao(appDatabase: AppDatabase): RankDao {
+        return appDatabase.rankDao()
     }
 }

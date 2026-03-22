@@ -9,6 +9,7 @@ import com.example.lifegame.databinding.ItemColorBinding
 import com.example.lifegame.utils.ColorPalette
 
 class ColorAdapter(
+    initialColorHex: String? = null,
     private val onColorSelected: (String) -> Unit
 ) : RecyclerView.Adapter<ColorAdapter.ColorViewHolder>() {
 
@@ -16,6 +17,12 @@ class ColorAdapter(
     private var selectedPosition = 0
 
     init {
+        initialColorHex?.let { color ->
+            val index = colors.indexOf(color.uppercase())
+            if (index != -1) {
+                selectedPosition = index
+            }
+        }
         onColorSelected(colors[selectedPosition])
     }
 

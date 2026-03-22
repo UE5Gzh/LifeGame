@@ -8,10 +8,17 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import android.os.Bundle
 import com.example.lifegame.databinding.DialogAddAttributeBinding
+import com.example.lifegame.databinding.DialogEditAttributeBinding
 import com.example.lifegame.databinding.FragmentAttributeBinding
+import com.example.lifegame.ui.attribute.rank.RankManagementFragment
+import com.example.lifegame.R
+import com.example.lifegame.data.entity.AttributeEntity
+import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.ui.base.BaseFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
@@ -47,7 +54,7 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         super.observeData()
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.attributes.collect { attributes ->
+                viewModel.attributesWithRanks.collect { attributes ->
                     adapter.submitList(attributes)
                 }
             }
@@ -55,7 +62,9 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
     }
 
     private fun setupRecyclerView() {
-        adapter = AttributeAdapter()
+        adapter = AttributeAdapter { attributeWithRanks ->
+            showEditAttributeDialog(attributeWithRanks.attribute)
+        }
         binding.rvAttributes.layoutManager = LinearLayoutManager(requireContext())
         binding.rvAttributes.adapter = adapter
     }
@@ -68,7 +77,7 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
 
         // Setup color picker
         var selectedColor = ""
-        val colorAdapter = ColorAdapter { colorHex ->
+        val colorAdapter = ColorAdapter(null) { colorHex ->
             selectedColor = colorHex
         }
         dialogBinding.rvColors.layoutManager = GridLayoutManager(requireContext(), 6)
@@ -90,6 +99,48 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
             val initialValue = initialValueStr?.toIntOrNull() ?: 10
 
             viewModel.addAttribute(name, initialValue, selectedColor)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showEditAttributeDialog(attribute: AttributeEntity) {
+        val dialogBinding = DialogEditAttributeBinding.inflate(layoutInflater)
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.tvDialogTitle.text = "修改 ${attribute.name}"
+        dialogBinding.etCurrentValue.setText(attribute.currentValue.toString())
+
+        var selectedColor = attribute.colorHex
+        val colorAdapter = ColorAdapter(selectedColor) { colorHex ->
+            selectedColor = colorHex
+        }
+        dialogBinding.rvColors.layoutManager = GridLayoutManager(requireContext(), 6)
+        dialogBinding.rvColors.adapter = colorAdapter
+
+        dialogBinding.btnManageRanks.setOnClickListener {
+            dialog.dismiss()
+            val args = Bundle().apply {
+                putLong("attributeId", attribute.id)
+            }
+            findNavController().navigate(R.id.rankManagementFragment, args)
+        }
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            val currentValueStr = dialogBinding.etCurrentValue.text?.toString()?.trim()
+            val currentValue = currentValueStr?.toIntOrNull() ?: attribute.currentValue
+
+            viewModel.updateAttribute(attribute.copy(
+                currentValue = currentValue,
+                colorHex = selectedColor
+            ))
             dialog.dismiss()
         }
 

@@ -28,4 +28,14 @@
         android:name="com.example.lifegame.ui.log.LogFragment"
         android:label="@string/title_log"
         tools:layout="@layout/fragment_log" />
+
+    <fragment
+        android:id="@+id/rankManagementFragment"
+        android:name="com.example.lifegame.ui.attribute.rank.RankManagementFragment"
+        android:label="管理段位"
+        tools:layout="@layout/fragment_rank_management" >
+        <argument
+            android:name="attributeId"
+            app:argType="long" />
+    </fragment>
 </navigation>
