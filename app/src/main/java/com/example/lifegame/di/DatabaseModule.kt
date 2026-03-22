@@ -41,13 +41,21 @@ object DatabaseModule {
                 )
             }
         }
+        
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `quests` ADD COLUMN `isFocused` INTEGER NOT NULL DEFAULT 0"
+                )
+            }
+        }
 
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "lifegame_database"
         )
-        .addMigrations(MIGRATION_6_7, MIGRATION_7_8)
+        .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
         .fallbackToDestructiveMigration()
         .build()
     }

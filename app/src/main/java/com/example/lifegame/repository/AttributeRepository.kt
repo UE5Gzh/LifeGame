@@ -30,9 +30,6 @@ class AttributeRepository @Inject constructor(
         attributeDao.deleteAttribute(attribute)
     }
 
-    suspend fun resetAllAttributes() {
-        attributeDao.resetAllAttributes()
-    }
 
     // Rank operations
     fun getRanksForAttribute(attributeId: Long): Flow<List<RankEntity>> {

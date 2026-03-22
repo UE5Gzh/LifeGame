@@ -29,6 +29,7 @@ interface AttributeDao {
     @Delete
     suspend fun deleteAttribute(attribute: AttributeEntity)
 
-    @Query("UPDATE attributes SET currentValue = initialValue")
-    suspend fun resetAllAttributes()
+    @Transaction
+    @Query("SELECT * FROM attributes ORDER BY sortOrder ASC")
+    suspend fun getAllAttributesWithRanksSync(): List<AttributeWithRanks>
 }

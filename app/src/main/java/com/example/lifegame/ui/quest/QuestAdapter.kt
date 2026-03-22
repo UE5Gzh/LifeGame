@@ -24,6 +24,16 @@ class QuestAdapter(
             val quest = item.quest
             binding.tvQuestName.text = quest.name
             
+            // Focus UI updates
+            if (quest.isFocused) {
+                binding.ivFocusedStar.visibility = android.view.View.VISIBLE
+                binding.cardContainer.strokeWidth = 2
+                binding.cardContainer.strokeColor = Color.parseColor("#FFC107")
+            } else {
+                binding.ivFocusedStar.visibility = android.view.View.GONE
+                binding.cardContainer.strokeWidth = 0
+            }
+
             // Status text and color
             when (quest.status) {
                 0 -> {
@@ -55,6 +65,8 @@ class QuestAdapter(
             // Deadline
             if (quest.type == 0) {
                 binding.tvDeadline.text = "今日重置"
+            } else if (quest.type == 3) {
+                binding.tvDeadline.text = "本周重置"
             } else if (quest.deadline != null) {
                 val format = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
                 binding.tvDeadline.text = "${format.format(quest.deadline)} 前"

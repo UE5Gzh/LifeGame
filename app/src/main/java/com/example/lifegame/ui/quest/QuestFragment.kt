@@ -84,7 +84,14 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
     private fun filterQuests() {
         val allQuests = viewModel.quests.value
-        val filtered = allQuests.filter { it.quest.type == currentSelectedTabType }
+        val type = when (currentSelectedTabType) {
+            0 -> 0 // 日常
+            1 -> 1 // 主线
+            2 -> 2 // 支线
+            3 -> 3 // 周常
+            else -> 0
+        }
+        val filtered = allQuests.filter { it.quest.type == type }
         adapter.submitList(filtered)
     }
 
@@ -149,6 +156,11 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         val options = mutableListOf("删除任务")
         if (questWithDetails.quest.status == 0) { // Only in progress quests can be given up
             options.add(0, "放弃任务") // Put it first
+            if (questWithDetails.quest.isFocused) {
+                options.add(1, "取消关注")
+            } else {
+                options.add(1, "设为关注任务")
+            }
         }
         
         MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
@@ -175,6 +187,8 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                         }
                         .setNegativeButton("取消", null)
                         .show()
+                } else if (selected == "设为关注任务" || selected == "取消关注") {
+                    viewModel.toggleQuestFocus(questWithDetails.quest)
                 }
             }
             .show()
@@ -242,15 +256,19 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         var selectedDeadline: Long? = null
 
         // Handle Type Radio Group
-        dialogBinding.rgType.setOnCheckedChangeListener { _, checkedId ->
-            if (checkedId == R.id.rbDaily) {
-                dialogBinding.tvDeadlineLabel.visibility = View.GONE
-                dialogBinding.tvDeadline.visibility = View.GONE
-                selectedDeadline = null
-            } else {
-                dialogBinding.tvDeadlineLabel.visibility = View.VISIBLE
-                dialogBinding.tvDeadline.visibility = View.VISIBLE
+        dialogBinding.spinnerType.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                // 0: 日常, 1: 主线, 2: 周常, 3: 支线
+                if (position == 0 || position == 2) {
+                    dialogBinding.tvDeadlineLabel.visibility = View.GONE
+                    dialogBinding.tvDeadline.visibility = View.GONE
+                    selectedDeadline = null
+                } else {
+                    dialogBinding.tvDeadlineLabel.visibility = View.VISIBLE
+                    dialogBinding.tvDeadline.visibility = View.VISIBLE
+                }
             }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }
 
         // Handle Deadline Selection
@@ -341,13 +359,14 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 return@setOnClickListener
             }
 
-            val type = when (dialogBinding.rgType.checkedRadioButtonId) {
-                R.id.rbDaily -> 0
-                R.id.rbMain -> 1
-                else -> 2
+            val type = when (dialogBinding.spinnerType.selectedItemPosition) {
+                0 -> 0 // 日常
+                1 -> 1 // 主线
+                2 -> 3 // 周常
+                else -> 2 // 支线
             }
 
-            if (type != 0 && selectedDeadline == null) {
+            if (type != 0 && type != 3 && selectedDeadline == null) {
                 Toast.makeText(requireContext(), "请选择截止日期", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }

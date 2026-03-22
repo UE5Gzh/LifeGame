@@ -23,6 +23,7 @@ import com.example.lifegame.R
 import com.example.lifegame.data.entity.AttributeEntity
 import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.ui.base.BaseFragment
+import com.example.lifegame.ui.quest.QuestViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -31,6 +32,7 @@ import kotlinx.coroutines.launch
 class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
 
     private val viewModel: AttributeViewModel by viewModels()
+    private val questViewModel: QuestViewModel by viewModels()
     private lateinit var adapter: AttributeAdapter
     private var isSortMode = false
     private var itemTouchHelper: ItemTouchHelper? = null
@@ -45,13 +47,9 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
     override fun setupViews() {
         super.setupViews()
         setupRecyclerView()
-        
+
         binding.btnAdd.setOnClickListener {
             showAddAttributeDialog()
-        }
-
-        binding.btnInit.setOnClickListener {
-            showResetConfirmationDialog()
         }
 
         binding.btnSort.setOnClickListener {
@@ -65,12 +63,10 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         if (isSortMode) {
             binding.btnSort.setImageResource(android.R.drawable.ic_menu_save)
             binding.btnAdd.visibility = View.GONE
-            binding.btnInit.visibility = View.GONE
             itemTouchHelper?.attachToRecyclerView(binding.rvAttributes)
         } else {
             binding.btnSort.setImageResource(android.R.drawable.ic_menu_sort_by_size)
             binding.btnAdd.visibility = View.VISIBLE
-            binding.btnInit.visibility = View.VISIBLE
             itemTouchHelper?.attachToRecyclerView(null)
             saveSortOrder()
         }
@@ -89,8 +85,26 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         super.observeData()
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.attributesWithRanks.collect { attributes ->
-                    adapter.submitList(attributes)
+                launch {
+                    viewModel.attributesWithRanks.collect { attributes ->
+                        adapter.submitList(attributes)
+                    }
+                }
+                launch {
+                    questViewModel.quests.collect { quests ->
+                        val focusedQuest = quests.find { it.quest.isFocused }
+                        if (focusedQuest != null && focusedQuest.quest.status == 0) {
+                            binding.cardFocusedQuest.visibility = View.VISIBLE
+                            binding.tvFocusedQuestName.text = focusedQuest.quest.name
+                            
+                            val progressFloat = questViewModel.calculateProgress(focusedQuest, viewModel.attributesWithRanks.value)
+                            val progressInt = (progressFloat * 100).toInt()
+                            binding.pbFocusedQuest.progress = progressInt
+                            binding.tvFocusedQuestProgress.text = "${progressInt}%"
+                        } else {
+                            binding.cardFocusedQuest.visibility = View.GONE
+                        }
+                    }
                 }
             }
         }
@@ -228,16 +242,5 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         dialog.show()
     }
 
-    private fun showResetConfirmationDialog() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("重置属性")
-            .setMessage("确定要将所有属性重置为初始数值吗？此操作不可撤销。")
-            .setPositiveButton("确定") { _, _ ->
-                viewModel.resetAllAttributes()
-                Toast.makeText(requireContext(), "已重置所有属性", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("取消", null)
-            .show()
-    }
 }
 

@@ -65,17 +65,53 @@ class QuestViewModel @Inject constructor(
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }.timeInMillis
+            
+            // Calculate start of current week (Monday 00:00)
+            val weekStart = Calendar.getInstance().apply {
+                firstDayOfWeek = Calendar.MONDAY
+                set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                // If today is Sunday, the above sets it to NEXT Monday, so we need to step back
+                if (timeInMillis > System.currentTimeMillis()) {
+                    add(Calendar.WEEK_OF_YEAR, -1)
+                }
+            }.timeInMillis
 
             for (q in allQuests) {
+                // Daily reset
                 if (q.quest.type == 0 && q.quest.lastResetTime < todayStart) {
-                    // It's a daily quest and hasn't been reset today
                     if (q.quest.status == 0) {
                         // Failed
-                        questRepository.updateQuest(q.quest.copy(status = 3, lastResetTime = System.currentTimeMillis()))
+                        val failedQuest = q.quest.copy(status = 3, lastResetTime = System.currentTimeMillis(), isFocused = false)
+                        questRepository.updateQuest(failedQuest)
                         val punishments = applyPunishments(q)
                         logRepository.insertLog(
                             type = "QUEST_ABANDON",
                             title = "日常任务超时失败: ${q.quest.name}",
+                            details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments"
+                        )
+                    } else if (q.quest.status == 2) {
+                        // Claimed -> Reset to In Progress
+                        questRepository.updateQuest(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()))
+                        // Also reset behavior counts
+                        val resetBehaviors = q.behaviorGoals.map { it.copy(currentCount = 0) }
+                        questRepository.updateQuestWithDetails(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()), q.attributeGoals, resetBehaviors, q.effects)
+                    }
+                }
+                
+                // Weekly reset
+                if (q.quest.type == 3 && q.quest.lastResetTime < weekStart) {
+                    if (q.quest.status == 0) {
+                        // Failed
+                        val failedQuest = q.quest.copy(status = 3, lastResetTime = System.currentTimeMillis(), isFocused = false)
+                        questRepository.updateQuest(failedQuest)
+                        val punishments = applyPunishments(q)
+                        logRepository.insertLog(
+                            type = "QUEST_ABANDON",
+                            title = "周常任务超时失败: ${q.quest.name}",
                             details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments"
                         )
                     } else if (q.quest.status == 2) {
@@ -147,11 +183,12 @@ class QuestViewModel @Inject constructor(
                     rewardDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${effect.valueChange} ")
                 }
             }
-            questRepository.updateQuest(questWithDetails.quest.copy(status = 2))
+            questRepository.updateQuest(questWithDetails.quest.copy(status = 2, isFocused = false))
             
             val typeStr = when(questWithDetails.quest.type) {
                 0 -> "日常"
                 1 -> "主线"
+                3 -> "周常"
                 else -> "支线"
             }
             logRepository.insertLog(
@@ -196,6 +233,7 @@ class QuestViewModel @Inject constructor(
             val typeStr = when(type) {
                 0 -> "日常"
                 1 -> "主线"
+                3 -> "周常"
                 else -> "支线"
             }
             logRepository.insertLog(
@@ -214,12 +252,13 @@ class QuestViewModel @Inject constructor(
 
     fun giveUpQuest(questWithDetails: QuestWithDetails) {
         viewModelScope.launch {
-            questRepository.updateQuest(questWithDetails.quest.copy(status = 3))
+            questRepository.updateQuest(questWithDetails.quest.copy(status = 3, isFocused = false))
             val punishments = applyPunishments(questWithDetails)
             
             val typeStr = when(questWithDetails.quest.type) {
                 0 -> "日常"
                 1 -> "主线"
+                3 -> "周常"
                 else -> "支线"
             }
             logRepository.insertLog(
@@ -227,6 +266,23 @@ class QuestViewModel @Inject constructor(
                 title = "放弃${typeStr}任务: ${questWithDetails.quest.name}",
                 details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments"
             )
+        }
+    }
+    
+    fun toggleQuestFocus(quest: QuestEntity) {
+        viewModelScope.launch {
+            if (!quest.isFocused) {
+                // Remove focus from any currently focused quest
+                val currentFocused = quests.value.find { it.quest.isFocused }?.quest
+                if (currentFocused != null) {
+                    questRepository.updateQuest(currentFocused.copy(isFocused = false))
+                }
+                // Set focus to this quest
+                questRepository.updateQuest(quest.copy(isFocused = true))
+            } else {
+                // Remove focus
+                questRepository.updateQuest(quest.copy(isFocused = false))
+            }
         }
     }
 }
