@@ -33,6 +33,6 @@ data class QuestEffectEntity(
     val isPunishment: Boolean,
     val type: Int, // 0: Attribute, 1: Text
     val attributeId: Long? = null,
-    val valueChange: Int? = null,
+    val valueChange: Float? = null,
     val text: String? = null
 )

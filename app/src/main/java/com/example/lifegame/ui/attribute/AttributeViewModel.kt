@@ -26,7 +26,9 @@ class AttributeViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    fun addAttribute(name: String, initialValue: Int, colorHex: String) {
+    val attributes: StateFlow<List<AttributeWithRanks>> = attributesWithRanks
+
+    fun addAttribute(name: String, initialValue: Float, colorHex: String) {
         viewModelScope.launch {
             val newAttribute = AttributeEntity(
                 name = name,
@@ -44,7 +46,7 @@ class AttributeViewModel @Inject constructor(
         }
     }
 
-    fun updateAttributeValue(attribute: AttributeEntity, newValue: Int) {
+    fun updateAttributeValue(attribute: AttributeEntity, newValue: Float) {
         viewModelScope.launch {
             repository.updateAttribute(attribute.copy(currentValue = newValue))
         }

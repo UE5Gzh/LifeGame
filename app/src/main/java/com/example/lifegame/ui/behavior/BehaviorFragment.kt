@@ -155,7 +155,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
 
         val availableAttributes = viewModel.attributes.value
 
-        fun addAttributeRow(preSelectedAttributeId: Long? = null, preValueChange: Int = 1) {
+        fun addAttributeRow(preSelectedAttributeId: Long? = null, preValueChange: Float = 1f) {
             if (availableAttributes.isEmpty()) {
                 Toast.makeText(requireContext(), "请先在个人属性中添加属性", Toast.LENGTH_SHORT).show()
                 return
@@ -182,7 +182,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                 }
             }
             
-            rowBinding.etValueChange.setText(preValueChange.toString())
+            rowBinding.etValueChange.setText(if (preValueChange == preValueChange.toInt().toFloat()) preValueChange.toInt().toString() else preValueChange.toString())
 
             rowBinding.btnRemove.setOnClickListener {
                 dialogBinding.llAttributesContainer.removeView(rowBinding.root)
@@ -219,7 +219,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             val selectedGroupPos = dialogBinding.spinnerGroup.selectedItemPosition
             val groupId = if (selectedGroupPos > 0) availableGroups[selectedGroupPos - 1].id else null
 
-            val modifiers = mutableListOf<Pair<Long, Int>>()
+            val modifiers = mutableListOf<Pair<Long, Float>>()
             for (i in 0 until dialogBinding.llAttributesContainer.childCount) {
                 val child = dialogBinding.llAttributesContainer.getChildAt(i)
                 val rowBinding = ItemBehaviorAttributeModifierBinding.bind(child)
@@ -228,8 +228,8 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                 if (selectedIndex >= 0 && selectedIndex < availableAttributes.size) {
                     val attributeId = availableAttributes[selectedIndex].attribute.id
                     val valueChangeStr = rowBinding.etValueChange.text?.toString()?.trim()
-                    val valueChange = valueChangeStr?.toIntOrNull() ?: 0
-                    if (valueChange != 0) {
+                    val valueChange = valueChangeStr?.toFloatOrNull() ?: 0f
+                    if (valueChange != 0f) {
                         modifiers.add(Pair(attributeId, valueChange))
                     }
                 }
@@ -680,7 +680,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             val selectedGroupPos = dialogBinding.spinnerGroup.selectedItemPosition
             val groupId = if (selectedGroupPos > 0) availableGroups[selectedGroupPos - 1].id else null
 
-            val modifiers = mutableListOf<Pair<Long, Int>>()
+            val modifiers = mutableListOf<Pair<Long, Float>>()
             for (i in 0 until dialogBinding.llAttributesContainer.childCount) {
                 val child = dialogBinding.llAttributesContainer.getChildAt(i)
                 val rowBinding = ItemBehaviorAttributeModifierBinding.bind(child)
@@ -689,8 +689,8 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                 if (selectedIndex >= 0 && selectedIndex < availableAttributes.size) {
                     val attributeId = availableAttributes[selectedIndex].attribute.id
                     val valueChangeStr = rowBinding.etValueChange.text?.toString()?.trim()
-                    val valueChange = valueChangeStr?.toIntOrNull() ?: 0
-                    if (valueChange != 0) {
+                    val valueChange = valueChangeStr?.toFloatOrNull() ?: 0f
+                    if (valueChange != 0f) {
                         modifiers.add(Pair(attributeId, valueChange))
                     }
                 }

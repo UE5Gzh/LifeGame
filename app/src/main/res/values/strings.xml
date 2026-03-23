@@ -1,11 +1,11 @@
 <resources>
     <string name="app_name">LifeGame</string>
-    <string name="title_attribute">个人属性</string>
+    <string name="title_attribute">个人信息</string>
     <string name="title_behavior">日常行动</string>
     <string name="title_quest">任务列表</string>
     <string name="title_log">操作日志</string>
     
-    <string name="nav_attribute">属性</string>
+    <string name="nav_attribute">信息</string>
     <string name="nav_behavior">行动</string>
     <string name="nav_quest">任务</string>
     <string name="nav_log">日志</string>
@@ -15,6 +15,8 @@
     
     <string name="tab_in_progress">进行中</string>
     <string name="tab_completed">已完成</string>
+    <string name="tab_attribute">属性</string>
+    <string name="tab_status">状态</string>
 
     <string-array name="quest_types">
         <item>日常</item>

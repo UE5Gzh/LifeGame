@@ -8,8 +8,8 @@ data class AttributeEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,
-    val currentValue: Int,
-    val initialValue: Int,
+    val currentValue: Float,
+    val initialValue: Float,
     val colorHex: String,
     val sortOrder: Int = 0
 )

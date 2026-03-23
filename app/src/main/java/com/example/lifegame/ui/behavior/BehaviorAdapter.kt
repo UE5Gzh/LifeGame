@@ -13,6 +13,7 @@ import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.data.entity.BehaviorWithModifiers
 import com.example.lifegame.databinding.ItemBehaviorBinding
 import java.util.Collections
+import kotlin.math.roundToInt
 
 class BehaviorAdapter(
     private val onActionClick: (BehaviorWithModifiers) -> Unit,
@@ -39,6 +40,14 @@ class BehaviorAdapter(
         submitList(currentList)
     }
 
+    private fun formatValue(value: Float): String {
+        return if (value == value.roundToInt().toFloat()) {
+            value.roundToInt().toString()
+        } else {
+            String.format("%.1f", value)
+        }
+    }
+
     inner class BehaviorViewHolder(private val binding: ItemBehaviorBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
@@ -46,10 +55,8 @@ class BehaviorAdapter(
             val behavior = item.behavior
             binding.tvName.text = behavior.name
 
-            // Construct the effects text
             val builder = SpannableStringBuilder()
             
-            // Energy part
             val energyText = if (behavior.energyValue == 0) {
                 "⚡ 无变化"
             } else {
@@ -68,14 +75,13 @@ class BehaviorAdapter(
                 SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE
             )
 
-            // Modifiers part
             for (modifier in item.modifiers) {
                 val attribute = attributes.find { it.attribute.id == modifier.attributeId }?.attribute
                 if (attribute != null) {
                     builder.append("  ")
                     val start = builder.length
                     val sign = if (modifier.valueChange > 0) "+" else ""
-                    val modText = "${attribute.name}${sign}${modifier.valueChange}"
+                    val modText = "${attribute.name}${sign}${formatValue(modifier.valueChange)}"
                     builder.append(modText)
                     
                     val attrColor = try {
@@ -102,7 +108,6 @@ class BehaviorAdapter(
             } else {
                 binding.ivDragHandle.visibility = View.GONE
                 binding.btnAction.visibility = View.VISIBLE
-                // Action button
                 if (behavior.focusDuration == 0) {
                     binding.btnAction.text = "执行"
                 } else {

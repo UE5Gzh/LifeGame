@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 @HiltViewModel
 class QuestViewModel @Inject constructor(
@@ -66,7 +67,6 @@ class QuestViewModel @Inject constructor(
                 set(Calendar.MILLISECOND, 0)
             }.timeInMillis
             
-            // Calculate start of current week (Monday 00:00)
             val weekStart = Calendar.getInstance().apply {
                 firstDayOfWeek = Calendar.MONDAY
                 set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
@@ -74,17 +74,14 @@ class QuestViewModel @Inject constructor(
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
-                // If today is Sunday, the above sets it to NEXT Monday, so we need to step back
                 if (timeInMillis > System.currentTimeMillis()) {
                     add(Calendar.WEEK_OF_YEAR, -1)
                 }
             }.timeInMillis
 
             for (q in allQuests) {
-                // Daily reset
                 if (q.quest.type == 0 && q.quest.lastResetTime < todayStart) {
                     if (q.quest.status == 0) {
-                        // Failed
                         val failedQuest = q.quest.copy(status = 3, lastResetTime = System.currentTimeMillis(), isFocused = false)
                         questRepository.updateQuest(failedQuest)
                         val punishments = applyPunishments(q)
@@ -94,18 +91,14 @@ class QuestViewModel @Inject constructor(
                             details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments"
                         )
                     } else if (q.quest.status == 2) {
-                        // Claimed -> Reset to In Progress
                         questRepository.updateQuest(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()))
-                        // Also reset behavior counts
                         val resetBehaviors = q.behaviorGoals.map { it.copy(currentCount = 0) }
                         questRepository.updateQuestWithDetails(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()), q.attributeGoals, resetBehaviors, q.effects)
                     }
                 }
                 
-                // Weekly reset
                 if (q.quest.type == 3 && q.quest.lastResetTime < weekStart) {
                     if (q.quest.status == 0) {
-                        // Failed
                         val failedQuest = q.quest.copy(status = 3, lastResetTime = System.currentTimeMillis(), isFocused = false)
                         questRepository.updateQuest(failedQuest)
                         val punishments = applyPunishments(q)
@@ -115,9 +108,7 @@ class QuestViewModel @Inject constructor(
                             details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments"
                         )
                     } else if (q.quest.status == 2) {
-                        // Claimed -> Reset to In Progress
                         questRepository.updateQuest(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()))
-                        // Also reset behavior counts
                         val resetBehaviors = q.behaviorGoals.map { it.copy(currentCount = 0) }
                         questRepository.updateQuestWithDetails(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()), q.attributeGoals, resetBehaviors, q.effects)
                     }
@@ -140,6 +131,14 @@ class QuestViewModel @Inject constructor(
         }
     }
 
+    private fun formatValue(value: Float): String {
+        return if (value == value.roundToInt().toFloat()) {
+            value.roundToInt().toString()
+        } else {
+            String.format("%.1f", value)
+        }
+    }
+
     fun calculateProgress(quest: QuestWithDetails, currentAttributes: List<AttributeWithRanks>): Float {
         val totalGoals = quest.attributeGoals.size + quest.behaviorGoals.size
         if (totalGoals == 0) return 0f
@@ -148,12 +147,12 @@ class QuestViewModel @Inject constructor(
 
         for (ag in quest.attributeGoals) {
             val attr = currentAttributes.find { it.attribute.id == ag.attributeId }?.attribute
-            val currentVal = attr?.currentValue ?: 0
+            val currentVal = attr?.currentValue ?: 0f
             val targetVal = ag.targetValue
-            if (targetVal <= 0) {
+            if (targetVal <= 0f) {
                 totalProgress += 1f
             } else {
-                val p = (currentVal.toFloat() / targetVal.toFloat()).coerceIn(0f, 1f)
+                val p = (currentVal / targetVal).coerceIn(0f, 1f)
                 totalProgress += p
             }
         }
@@ -172,7 +171,6 @@ class QuestViewModel @Inject constructor(
 
     fun claimReward(questWithDetails: QuestWithDetails) {
         viewModelScope.launch {
-            // Apply rewards
             val currentAttrs = attributes.value
             val rewardDetails = StringBuilder()
             
@@ -180,7 +178,7 @@ class QuestViewModel @Inject constructor(
                 val attrToUpdate = currentAttrs.find { it.attribute.id == effect.attributeId }?.attribute
                 if (attrToUpdate != null && effect.valueChange != null) {
                     attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + effect.valueChange))
-                    rewardDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${effect.valueChange} ")
+                    rewardDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${formatValue(effect.valueChange)} ")
                 }
             }
             questRepository.updateQuest(questWithDetails.quest.copy(status = 2, isFocused = false))
@@ -207,7 +205,7 @@ class QuestViewModel @Inject constructor(
             val attrToUpdate = currentAttrs.find { it.attribute.id == effect.attributeId }?.attribute
             if (attrToUpdate != null && effect.valueChange != null) {
                 attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + effect.valueChange))
-                punishmentDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${effect.valueChange} ")
+                punishmentDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${formatValue(effect.valueChange)} ")
             }
         }
         return punishmentDetails.toString()
@@ -272,15 +270,12 @@ class QuestViewModel @Inject constructor(
     fun toggleQuestFocus(quest: QuestEntity) {
         viewModelScope.launch {
             if (!quest.isFocused) {
-                // Remove focus from any currently focused quest
                 val currentFocused = quests.value.find { it.quest.isFocused }?.quest
                 if (currentFocused != null) {
                     questRepository.updateQuest(currentFocused.copy(isFocused = false))
                 }
-                // Set focus to this quest
                 questRepository.updateQuest(quest.copy(isFocused = true))
             } else {
-                // Remove focus
                 questRepository.updateQuest(quest.copy(isFocused = false))
             }
         }
@@ -301,7 +296,7 @@ class QuestViewModel @Inject constructor(
                 val attrToUpdate = currentAttrs.find { it.attribute.id == effect.attributeId }?.attribute
                 if (attrToUpdate != null && effect.valueChange != null) {
                     attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + effect.valueChange))
-                    rewardDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${effect.valueChange} ")
+                    rewardDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${formatValue(effect.valueChange)} ")
                 }
             }
             

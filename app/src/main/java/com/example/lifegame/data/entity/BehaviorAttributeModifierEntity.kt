@@ -31,5 +31,5 @@ data class BehaviorAttributeModifierEntity(
     val id: Long = 0,
     val behaviorId: Long,
     val attributeId: Long,
-    val valueChange: Int
+    val valueChange: Float
 )

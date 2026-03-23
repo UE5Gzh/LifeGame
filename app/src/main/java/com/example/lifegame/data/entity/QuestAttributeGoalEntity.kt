@@ -31,5 +31,5 @@ data class QuestAttributeGoalEntity(
     val id: Long = 0,
     val questId: Long,
     val attributeId: Long,
-    val targetValue: Int
+    val targetValue: Float
 )

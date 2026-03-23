@@ -21,6 +21,6 @@ data class RankEntity(
     val id: Long = 0,
     val attributeId: Long,
     val name: String,
-    val minValue: Int,
-    val maxValue: Int
+    val minValue: Float,
+    val maxValue: Float
 )

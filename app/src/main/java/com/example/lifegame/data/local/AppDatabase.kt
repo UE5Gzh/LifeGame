@@ -33,7 +33,7 @@ import com.example.lifegame.data.entity.LogEntity
         QuestEffectEntity::class,
         LogEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

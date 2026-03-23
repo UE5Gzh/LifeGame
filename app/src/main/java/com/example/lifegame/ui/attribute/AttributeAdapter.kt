@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.databinding.ItemAttributeBinding
 import java.util.Collections
+import kotlin.math.roundToInt
 
 class AttributeAdapter(
     private val onAttributeClick: (AttributeWithRanks) -> Unit,
@@ -28,16 +29,23 @@ class AttributeAdapter(
         submitList(currentList)
     }
 
+    private fun formatValue(value: Float): String {
+        return if (value == value.roundToInt().toFloat()) {
+            value.roundToInt().toString()
+        } else {
+            String.format("%.1f", value)
+        }
+    }
+
     inner class AttributeViewHolder(private val binding: ItemAttributeBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: AttributeWithRanks) {
             val attribute = item.attribute
             binding.tvName.text = attribute.name
-            binding.tvValue.text = attribute.currentValue.toString()
+            binding.tvValue.text = formatValue(attribute.currentValue)
             binding.clContainer.setCardBackgroundColor(Color.parseColor(attribute.colorHex))
             
-            // Handle rank display
             val ranks = item.ranks.sortedBy { it.minValue }
             val currentRank = ranks.lastOrNull { attribute.currentValue >= it.minValue }
             val nextRank = ranks.firstOrNull { attribute.currentValue < it.minValue }
@@ -52,7 +60,7 @@ class AttributeAdapter(
             if (nextRank != null) {
                 binding.tvProgress.visibility = View.VISIBLE
                 val pointsNeeded = nextRank.minValue - attribute.currentValue
-                binding.tvProgress.text = "距离「${nextRank.name}」还需 $pointsNeeded 点"
+                binding.tvProgress.text = "距离「${nextRank.name}」还需 ${formatValue(pointsNeeded)} 点"
             } else {
                 binding.tvProgress.visibility = View.GONE
             }

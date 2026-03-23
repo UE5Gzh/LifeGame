@@ -295,7 +295,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         q.effects.filter { !it.isPunishment }.forEach { e ->
             if (e.type == 0) {
                 val attrName = viewModel.attributes.value.find { it.attribute.id == e.attributeId }?.attribute?.name ?: "未知属性"
-                val sign = if ((e.valueChange ?: 0) >= 0) "+" else ""
+                val sign = if ((e.valueChange ?: 0f) >= 0f) "+" else ""
                 msg.append("- $attrName $sign${e.valueChange}\n")
             } else {
                 msg.append("- ${e.text}\n")
@@ -308,7 +308,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             punishments.forEach { e ->
                 if (e.type == 0) {
                     val attrName = viewModel.attributes.value.find { it.attribute.id == e.attributeId }?.attribute?.name ?: "未知属性"
-                    val sign = if ((e.valueChange ?: 0) >= 0) "+" else ""
+                    val sign = if ((e.valueChange ?: 0f) >= 0f) "+" else ""
                     msg.append("- $attrName $sign${e.valueChange}\n")
                 } else {
                     msg.append("- ${e.text}\n")
@@ -451,8 +451,8 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 if (view.tag == "attr") {
                     val rb = ItemQuestAttrGoalBinding.bind(view)
                     val pos = rb.spinnerAttr.selectedItemPosition
-                    val target = rb.etTargetVal.text.toString().toIntOrNull()
-                    if (pos >= 0 && target != null && target > 0) {
+                    val target = rb.etTargetVal.text.toString().toFloatOrNull()
+                    if (pos >= 0 && target != null && target > 0f) {
                         attrGoals.add(QuestAttributeGoalEntity(questId = 0, attributeId = availableAttributes[pos].attribute.id, targetValue = target))
                     }
                 } else if (view.tag == "beh") {
@@ -481,7 +481,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                     
                     if (effectType == 0) {
                         val pos = rb.spinnerAttr.selectedItemPosition
-                        val change = rb.etValChange.text.toString().toIntOrNull()
+                        val change = rb.etValChange.text.toString().toFloatOrNull()
                         if (pos >= 0 && change != null && availableAttributes.isNotEmpty()) {
                             effects.add(QuestEffectEntity(questId = 0, isPunishment = isPunish, type = 0, attributeId = availableAttributes[pos].attribute.id, valueChange = change))
                         }

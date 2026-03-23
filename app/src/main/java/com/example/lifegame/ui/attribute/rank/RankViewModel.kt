@@ -34,7 +34,7 @@ class RankViewModel @Inject constructor(
         _attributeId.value = id
     }
 
-    fun addRank(name: String, minValue: Int, maxValue: Int) {
+    fun addRank(name: String, minValue: Float, maxValue: Float) {
         val currentAttributeId = _attributeId.value
         if (currentAttributeId == -1L) return
 

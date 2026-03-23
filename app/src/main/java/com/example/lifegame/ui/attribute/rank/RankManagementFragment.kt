@@ -96,15 +96,14 @@ class RankManagementFragment : BaseFragment<FragmentRankManagementBinding>() {
                 return@setOnClickListener
             }
 
-            val minValue = minStr.toIntOrNull()
-            val maxValue = maxStr.toIntOrNull()
+            val minValue = minStr.toFloatOrNull()
+            val maxValue = maxStr.toFloatOrNull()
 
             if (minValue == null || maxValue == null || minValue > maxValue) {
                 Toast.makeText(requireContext(), "数值范围无效", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // Simple validation for overlap, full validation in ViewModel
             val currentRanks = viewModel.ranks.value
             val hasOverlap = currentRanks.any { 
                 (minValue >= it.minValue && minValue <= it.maxValue) ||

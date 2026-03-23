@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 @HiltViewModel
 class BehaviorViewModel @Inject constructor(
@@ -83,9 +84,9 @@ class BehaviorViewModel @Inject constructor(
         viewModelScope.launch {
             val currentAttributes = attributeRepository.allAttributesWithRanks.first()
             if (currentAttributes.isEmpty()) {
-                attributeRepository.insertAttribute(AttributeEntity(name = "智商", currentValue = 100, initialValue = 100, colorHex = "#2196F3"))
-                attributeRepository.insertAttribute(AttributeEntity(name = "情商", currentValue = 100, initialValue = 100, colorHex = "#E91E63"))
-                attributeRepository.insertAttribute(AttributeEntity(name = "体魄", currentValue = 100, initialValue = 100, colorHex = "#4CAF50"))
+                attributeRepository.insertAttribute(AttributeEntity(name = "智商", currentValue = 100f, initialValue = 100f, colorHex = "#2196F3"))
+                attributeRepository.insertAttribute(AttributeEntity(name = "情商", currentValue = 100f, initialValue = 100f, colorHex = "#E91E63"))
+                attributeRepository.insertAttribute(AttributeEntity(name = "体魄", currentValue = 100f, initialValue = 100f, colorHex = "#4CAF50"))
             }
         }
     }
@@ -96,7 +97,7 @@ class BehaviorViewModel @Inject constructor(
         energyValue: Int,
         focusDuration: Int,
         groupId: Long?,
-        modifiers: List<Pair<Long, Int>>
+        modifiers: List<Pair<Long, Float>>
     ) {
         viewModelScope.launch {
             val behavior = BehaviorEntity(
@@ -108,7 +109,7 @@ class BehaviorViewModel @Inject constructor(
             )
             val modifierEntities = modifiers.map { (attributeId, valueChange) ->
                 BehaviorAttributeModifierEntity(
-                    behaviorId = 0, // Will be set in repository
+                    behaviorId = 0,
                     attributeId = attributeId,
                     valueChange = valueChange
                 )
@@ -124,7 +125,7 @@ class BehaviorViewModel @Inject constructor(
         energyValue: Int,
         focusDuration: Int,
         groupId: Long?,
-        modifiers: List<Pair<Long, Int>>
+        modifiers: List<Pair<Long, Float>>
     ) {
         viewModelScope.launch {
             val behavior = BehaviorEntity(
@@ -158,9 +159,16 @@ class BehaviorViewModel @Inject constructor(
         }
     }
 
+    private fun formatValue(value: Float): String {
+        return if (value == value.roundToInt().toFloat()) {
+            value.roundToInt().toString()
+        } else {
+            String.format("%.1f", value)
+        }
+    }
+
     fun executeBehavior(behaviorWithModifiers: BehaviorWithModifiers, isFocus: Boolean = false) {
         viewModelScope.launch {
-            // Update Energy
             val behavior = behaviorWithModifiers.behavior
             val change = if (behavior.energyType == 0) -behavior.energyValue else behavior.energyValue
             var newEnergy = _currentEnergy.value + change
@@ -172,7 +180,6 @@ class BehaviorViewModel @Inject constructor(
 
             val detailsBuilder = StringBuilder()
 
-            // Apply attribute modifiers
             val currentAttributes = attributeRepository.allAttributesWithRanks.first()
             for (modifier in behaviorWithModifiers.modifiers) {
                 val attributeToUpdate = currentAttributes.find { it.attribute.id == modifier.attributeId }?.attribute
@@ -180,14 +187,12 @@ class BehaviorViewModel @Inject constructor(
                     val newValue = attributeToUpdate.currentValue + modifier.valueChange
                     attributeRepository.updateAttribute(attributeToUpdate.copy(currentValue = newValue))
                     if (detailsBuilder.isNotEmpty()) detailsBuilder.append(", ")
-                    detailsBuilder.append("${attributeToUpdate.name} ${if(modifier.valueChange >= 0) "+" else ""}${modifier.valueChange}")
+                    detailsBuilder.append("${attributeToUpdate.name} ${if(modifier.valueChange >= 0) "+" else ""}${formatValue(modifier.valueChange)}")
                 }
             }
 
-            // Update quest behavior goals
             questRepository.incrementBehaviorGoalCount(behavior.id)
             
-            // Log the event
             val title = if (isFocus) "专注完成: ${behavior.name}" else "执行行动: ${behavior.name}"
             val details = if (detailsBuilder.isNotEmpty()) "属性变动: ${detailsBuilder.toString()}" else "无属性变动"
             logRepository.insertLog(
@@ -207,14 +212,12 @@ class BehaviorViewModel @Inject constructor(
         _maxEnergy.value = newMax
         sharedPreferences.edit().putInt("max_energy", newMax).apply()
         
-        // Adjust current energy if it exceeds the new max
         if (_currentEnergy.value > newMax) {
             _currentEnergy.value = newMax
             sharedPreferences.edit().putInt("current_energy", newMax).apply()
         }
     }
 
-    // --- Group Management ---
     fun addGroup(name: String, colorHex: String = "") {
         viewModelScope.launch {
             behaviorRepository.insertGroup(BehaviorGroupEntity(name = name, colorHex = colorHex))
