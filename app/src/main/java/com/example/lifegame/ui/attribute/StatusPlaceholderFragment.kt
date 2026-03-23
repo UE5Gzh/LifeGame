@@ -47,22 +47,10 @@ class StatusPlaceholderFragment : BaseFragment<FragmentStatusPlaceholderBinding>
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.statuses.collect { statuses ->
-                        adapter = StatusAdapter(
-                            attributes = viewModel.attributes.value,
-                            onStatusToggle = { status, enabled ->
-                                viewModel.toggleStatus(status, enabled)
-                            },
-                            onEditClick = { status ->
-                                showEditStatusDialog(status)
-                            },
-                            onDeleteClick = { status ->
-                                showDeleteConfirmDialog(status)
-                            }
-                        )
-                        adapter.isSortMode = isSortMode
-                        binding.rvStatuses.adapter = adapter
-                        adapter.submitList(statuses)
-                        
+                        if (::adapter.isInitialized) {
+                            adapter.updateAttributes(viewModel.attributes.value)
+                            adapter.submitList(statuses)
+                        }
                         binding.tvEmpty.visibility = if (statuses.isEmpty()) View.VISIBLE else View.GONE
                     }
                 }
@@ -70,21 +58,7 @@ class StatusPlaceholderFragment : BaseFragment<FragmentStatusPlaceholderBinding>
                 launch {
                     viewModel.attributes.collect { attributes ->
                         if (::adapter.isInitialized) {
-                            adapter = StatusAdapter(
-                                attributes = attributes,
-                                onStatusToggle = { status, enabled ->
-                                    viewModel.toggleStatus(status, enabled)
-                                },
-                                onEditClick = { status ->
-                                    showEditStatusDialog(status)
-                                },
-                                onDeleteClick = { status ->
-                                    showDeleteConfirmDialog(status)
-                                }
-                            )
-                            adapter.isSortMode = isSortMode
-                            binding.rvStatuses.adapter = adapter
-                            adapter.submitList(viewModel.statuses.value)
+                            adapter.updateAttributes(attributes)
                         }
                     }
                 }
@@ -98,10 +72,10 @@ class StatusPlaceholderFragment : BaseFragment<FragmentStatusPlaceholderBinding>
             onStatusToggle = { status, enabled ->
                 viewModel.toggleStatus(status, enabled)
             },
-            onEditClick = { status ->
+            onItemClick = { status ->
                 showEditStatusDialog(status)
             },
-            onDeleteClick = { status ->
+            onItemLongClick = { status ->
                 showDeleteConfirmDialog(status)
             }
         )
@@ -136,7 +110,7 @@ class StatusPlaceholderFragment : BaseFragment<FragmentStatusPlaceholderBinding>
         adapter.isSortMode = isSortMode
         if (isSortMode) {
             itemTouchHelper?.attachToRecyclerView(binding.rvStatuses)
-            Toast.makeText(requireContext(), "进入排序模式，长按保存", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "进入排序模式", Toast.LENGTH_SHORT).show()
         } else {
             itemTouchHelper?.attachToRecyclerView(null)
             saveSortOrder()
@@ -162,6 +136,7 @@ class StatusPlaceholderFragment : BaseFragment<FragmentStatusPlaceholderBinding>
             .setMessage("确定要删除状态「${status.name}」吗？")
             .setPositiveButton("删除") { _, _ ->
                 viewModel.deleteStatus(status)
+                Toast.makeText(requireContext(), "状态已删除", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("取消", null)
             .show()

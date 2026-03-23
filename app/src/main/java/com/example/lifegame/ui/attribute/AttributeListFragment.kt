@@ -70,9 +70,9 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
                     showEditAttributeDialog(attributeWithRanks.attribute)
                 }
             },
-            onAttributeLongClick = {
+            onAttributeLongClick = { attributeWithRanks ->
                 if (!isSortMode) {
-                    toggleSortMode()
+                    showDeleteAttributeDialog(attributeWithRanks)
                 }
             }
         )
@@ -107,7 +107,7 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
         adapter.isSortMode = isSortMode
         if (isSortMode) {
             itemTouchHelper?.attachToRecyclerView(binding.rvAttributes)
-            Toast.makeText(requireContext(), "进入排序模式，长按保存", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "进入排序模式", Toast.LENGTH_SHORT).show()
         } else {
             itemTouchHelper?.attachToRecyclerView(null)
             saveSortOrder()
@@ -198,6 +198,19 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
         }
 
         dialog.show()
+    }
+
+    private fun showDeleteAttributeDialog(attributeWithRanks: AttributeWithRanks) {
+        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setTitle("删除属性")
+            .setMessage("确定要删除属性「${attributeWithRanks.attribute.name}」吗？\n删除后相关数据将无法恢复。")
+            .setPositiveButton("删除") { _, _ ->
+                viewModel.checkAndDeleteAttribute(attributeWithRanks.attribute) { success, message ->
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     private fun formatAttributeValue(value: Float): String {

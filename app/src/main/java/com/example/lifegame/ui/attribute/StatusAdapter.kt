@@ -17,10 +17,10 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 class StatusAdapter(
-    private val attributes: List<AttributeWithRanks>,
+    private var attributes: List<AttributeWithRanks>,
     private val onStatusToggle: (StatusEntity, Boolean) -> Unit,
-    private val onEditClick: (StatusEntity) -> Unit,
-    private val onDeleteClick: (StatusEntity) -> Unit
+    private val onItemClick: (StatusEntity) -> Unit,
+    private val onItemLongClick: (StatusEntity) -> Unit
 ) : ListAdapter<StatusEntity, StatusAdapter.StatusViewHolder>(StatusDiffCallback()) {
 
     var isSortMode = false
@@ -28,6 +28,11 @@ class StatusAdapter(
             field = value
             notifyDataSetChanged()
         }
+
+    fun updateAttributes(newAttributes: List<AttributeWithRanks>) {
+        attributes = newAttributes
+        notifyDataSetChanged()
+    }
 
     fun swapItems(fromPosition: Int, toPosition: Int) {
         val currentList = currentList.toMutableList()
@@ -61,7 +66,7 @@ class StatusAdapter(
             if (status.effectType == 0) {
                 val unitStr = if (status.periodUnit == 0) "小时" else "天"
                 val sign = if (status.changeValue >= 0) "+" else ""
-                binding.tvEffectInfo.text = "周期性: 每${status.periodValue}$unitStr $attrName $sign${formatValue(status.changeValue)}"
+                binding.tvEffectInfo.text = "效果: 每${status.periodValue}$unitStr $attrName $sign${formatValue(status.changeValue)}"
                 
                 if (status.isEnabled) {
                     binding.tvNextTrigger.visibility = View.VISIBLE
@@ -72,7 +77,7 @@ class StatusAdapter(
                     binding.tvNextTrigger.visibility = View.GONE
                 }
             } else {
-                binding.tvEffectInfo.text = "加成: $attrName +${formatValue(status.bonusPercent)}%"
+                binding.tvEffectInfo.text = "加成: 获取$attrName +${formatValue(status.bonusPercent)}%"
                 binding.tvNextTrigger.visibility = View.GONE
             }
 
@@ -82,29 +87,28 @@ class StatusAdapter(
                 binding.cardContainer.setCardBackgroundColor(Color.parseColor("#21212B"))
             }
 
-            binding.switchEnabled.setOnCheckedChangeListener(null)
-            binding.switchEnabled.isChecked = status.isEnabled
-            binding.switchEnabled.setOnCheckedChangeListener { _, isChecked ->
-                onStatusToggle(status, isChecked)
-            }
-
             if (isSortMode) {
                 binding.ivDragHandle.visibility = View.VISIBLE
                 binding.switchEnabled.visibility = View.GONE
-                binding.btnEdit.visibility = View.GONE
-                binding.btnDelete.visibility = View.GONE
+                binding.contentArea.setOnClickListener(null)
+                binding.contentArea.setOnLongClickListener(null)
             } else {
                 binding.ivDragHandle.visibility = View.GONE
                 binding.switchEnabled.visibility = View.VISIBLE
-                binding.btnEdit.visibility = View.VISIBLE
-                binding.btnDelete.visibility = View.VISIBLE
-
-                binding.btnEdit.setOnClickListener {
-                    onEditClick(status)
+                
+                binding.switchEnabled.setOnCheckedChangeListener(null)
+                binding.switchEnabled.isChecked = status.isEnabled
+                binding.switchEnabled.setOnCheckedChangeListener { _, isChecked ->
+                    onStatusToggle(status, isChecked)
                 }
 
-                binding.btnDelete.setOnClickListener {
-                    onDeleteClick(status)
+                binding.contentArea.setOnClickListener {
+                    onItemClick(status)
+                }
+
+                binding.contentArea.setOnLongClickListener {
+                    onItemLongClick(status)
+                    true
                 }
             }
         }

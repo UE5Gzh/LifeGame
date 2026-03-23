@@ -3,7 +3,7 @@
     <string name="title_attribute">个人信息</string>
     <string name="title_behavior">日常行动</string>
     <string name="title_quest">任务列表</string>
-    <string name="title_log">操作日志</string>
+    <string name="title_log">我的日志</string>
     
     <string name="nav_attribute">信息</string>
     <string name="nav_behavior">行动</string>

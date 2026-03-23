@@ -2,17 +2,17 @@ package com.example.lifegame.ui.attribute
 
 import android.app.AlertDialog
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import android.widget.RadioButton
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.example.lifegame.R
-import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.data.entity.StatusEntity
 import com.example.lifegame.databinding.DialogAddStatusBinding
 import com.example.lifegame.databinding.FragmentAttributeBinding
@@ -26,9 +26,6 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
 
     private val viewModel: AttributeViewModel by viewModels()
     private val statusViewModel: StatusViewModel by viewModels()
-    private lateinit var attributeListFragment: AttributeListFragment
-    private lateinit var statusPlaceholderFragment: StatusPlaceholderFragment
-    private lateinit var pagerAdapter: InfoPagerAdapter
 
     private val colorOptions = listOf(
         "#21212B", "#1A237E", "#0D47A1", "#01579B",
@@ -38,6 +35,9 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
     )
     private var selectedColorIndex = 0
     private var editingStatus: StatusEntity? = null
+
+    private var attributeListFragment: AttributeListFragment? = null
+    private var statusPlaceholderFragment: StatusPlaceholderFragment? = null
 
     override fun getViewBinding(
         inflater: LayoutInflater,
@@ -49,10 +49,17 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
     override fun setupViews() {
         super.setupViews()
         
-        attributeListFragment = AttributeListFragment()
-        statusPlaceholderFragment = StatusPlaceholderFragment()
+        val pagerAdapter = object : FragmentStateAdapter(childFragmentManager, lifecycle) {
+            override fun getItemCount(): Int = 2
+
+            override fun createFragment(position: Int): androidx.fragment.app.Fragment {
+                return when (position) {
+                    0 -> AttributeListFragment().also { attributeListFragment = it }
+                    else -> StatusPlaceholderFragment().also { statusPlaceholderFragment = it }
+                }
+            }
+        }
         
-        pagerAdapter = InfoPagerAdapter(requireActivity(), attributeListFragment, statusPlaceholderFragment)
         binding.viewPager.adapter = pagerAdapter
 
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
@@ -67,49 +74,52 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         }
 
         binding.btnSort.setOnClickListener {
-            if (binding.viewPager.currentItem == 0) {
-                attributeListFragment.triggerSortMode()
-                updateSortButton()
-            } else {
-                statusPlaceholderFragment.triggerSortMode()
-                updateSortButtonForStatus()
+            toggleSortModeForCurrentPage()
+        }
+    }
+
+    private fun toggleSortModeForCurrentPage() {
+        val currentPosition = binding.viewPager.currentItem
+        
+        if (currentPosition == 0) {
+            attributeListFragment?.let { fragment ->
+                fragment.triggerSortMode()
+                updateSortButton(fragment.isInSortMode())
+            }
+        } else {
+            statusPlaceholderFragment?.let { fragment ->
+                fragment.triggerSortMode()
+                updateSortButton(fragment.isInSortMode())
             }
         }
     }
 
     private fun showAddMenu() {
-        val items = if (binding.viewPager.currentItem == 0) {
-            arrayOf("新增属性", "新增状态")
-        } else {
-            arrayOf("新增状态")
+        val items = arrayOf("新增属性", "新增状态")
+        
+        val adapter = object : ArrayAdapter<String>(requireContext(), android.R.layout.simple_list_item_1, items) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent)
+                val textView = view.findViewById<TextView>(android.R.id.text1)
+                textView.setTextColor(Color.WHITE)
+                textView.textSize = 16f
+                textView.setPadding(32, 24, 32, 24)
+                return view
+            }
         }
         
         AlertDialog.Builder(requireContext(), R.style.Theme_LifeGame_Dialog)
-            .setItems(items) { _, which ->
-                if (binding.viewPager.currentItem == 0) {
-                    when (which) {
-                        0 -> attributeListFragment.triggerAddAttribute()
-                        1 -> showAddStatusDialog(null)
-                    }
-                } else {
-                    showAddStatusDialog(null)
+            .setAdapter(adapter) { _, which ->
+                when (which) {
+                    0 -> attributeListFragment?.triggerAddAttribute()
+                    1 -> showAddStatusDialog(null)
                 }
             }
             .show()
     }
 
-    private fun updateSortButton() {
-        if (attributeListFragment.isInSortMode()) {
-            binding.btnSort.setImageResource(android.R.drawable.ic_menu_save)
-            binding.btnAdd.visibility = View.GONE
-        } else {
-            binding.btnSort.setImageResource(android.R.drawable.ic_menu_sort_by_size)
-            binding.btnAdd.visibility = View.VISIBLE
-        }
-    }
-
-    private fun updateSortButtonForStatus() {
-        if (statusPlaceholderFragment.isInSortMode()) {
+    private fun updateSortButton(isSortMode: Boolean) {
+        if (isSortMode) {
             binding.btnSort.setImageResource(android.R.drawable.ic_menu_save)
             binding.btnAdd.visibility = View.GONE
         } else {
@@ -162,6 +172,7 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
     }
 
     private fun setupColorPicker(dialogBinding: DialogAddStatusBinding) {
+        dialogBinding.rvColors.layoutManager = GridLayoutManager(requireContext(), 4)
         dialogBinding.rvColors.adapter = ColorPickerAdapter(colorOptions) { position ->
             selectedColorIndex = position
             updateColorSelection(dialogBinding)
@@ -180,8 +191,8 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
             statusViewModel.attributes.collect { attributes ->
                 if (attributes.isNotEmpty()) {
                     val attrNames = attributes.map { it.attribute.name }
-                    val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, attrNames)
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    val adapter = ArrayAdapter(requireContext(), R.layout.spinner_item_dark, attrNames)
+                    adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark)
                     dialogBinding.spinnerAttribute.adapter = adapter
                     
                     editingStatus?.let { status ->
@@ -209,8 +220,8 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
 
     private fun setupPeriodUnitSpinner(dialogBinding: DialogAddStatusBinding) {
         val units = arrayOf("小时", "天")
-        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, units)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val adapter = ArrayAdapter(requireContext(), R.layout.spinner_item_dark, units)
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark)
         dialogBinding.spinnerPeriodUnit.adapter = adapter
     }
 
