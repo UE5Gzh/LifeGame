@@ -13,5 +13,6 @@ data class QuestEntity(
     val status: Int = 0, // 0: In Progress, 1: Completed Unclaimed, 2: Claimed, 3: Failed
     val createdAt: Long = System.currentTimeMillis(),
     val lastResetTime: Long = System.currentTimeMillis(), // To handle daily/weekly resets
-    val isFocused: Boolean = false // Whether the quest is starred/focused on the attribute screen
+    val isFocused: Boolean = false, // Whether the quest is starred/focused on the attribute screen
+    val sortOrder: Int = 0 // For custom sorting
 )

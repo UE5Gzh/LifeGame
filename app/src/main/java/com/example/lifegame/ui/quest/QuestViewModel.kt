@@ -285,4 +285,39 @@ class QuestViewModel @Inject constructor(
             }
         }
     }
+
+    fun updateQuestSortOrders(quests: List<QuestEntity>) {
+        viewModelScope.launch {
+            questRepository.updateQuests(quests)
+        }
+    }
+
+    fun instantCompleteQuest(questWithDetails: QuestWithDetails) {
+        viewModelScope.launch {
+            val currentAttrs = attributes.value
+            val rewardDetails = StringBuilder()
+            
+            for (effect in questWithDetails.effects.filter { !it.isPunishment && it.type == 0 }) {
+                val attrToUpdate = currentAttrs.find { it.attribute.id == effect.attributeId }?.attribute
+                if (attrToUpdate != null && effect.valueChange != null) {
+                    attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + effect.valueChange))
+                    rewardDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${effect.valueChange} ")
+                }
+            }
+            
+            questRepository.updateQuest(questWithDetails.quest.copy(status = 1, isFocused = false))
+            
+            val typeStr = when(questWithDetails.quest.type) {
+                0 -> "日常"
+                1 -> "主线"
+                3 -> "周常"
+                else -> "支线"
+            }
+            logRepository.insertLog(
+                type = "QUEST_INSTANT_COMPLETE",
+                title = "通过立即完成功能完成${typeStr}任务: ${questWithDetails.quest.name}",
+                details = if (rewardDetails.isEmpty()) "获得奖励: 无" else "获得奖励: $rewardDetails"
+            )
+        }
+    }
 }

@@ -40,6 +40,10 @@ class QuestRepository @Inject constructor(
         questDao.updateQuest(quest)
     }
 
+    suspend fun updateQuests(quests: List<QuestEntity>) {
+        questDao.updateQuests(quests)
+    }
+
     suspend fun deleteQuest(quest: QuestEntity) {
         questDao.deleteQuest(quest)
     }

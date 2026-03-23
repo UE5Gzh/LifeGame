@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface QuestDao {
     @Transaction
-    @Query("SELECT * FROM quests ORDER BY createdAt DESC")
+    @Query("SELECT * FROM quests ORDER BY sortOrder ASC, createdAt DESC")
     fun getAllQuestsWithDetails(): Flow<List<QuestWithDetails>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -25,6 +25,9 @@ interface QuestDao {
 
     @Update
     suspend fun updateQuest(quest: QuestEntity)
+
+    @Update
+    suspend fun updateQuests(quests: List<QuestEntity>)
 
     @Delete
     suspend fun deleteQuest(quest: QuestEntity)

@@ -11,7 +11,9 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.lifegame.R
 import com.example.lifegame.data.entity.QuestAttributeGoalEntity
 import com.example.lifegame.data.entity.QuestBehaviorGoalEntity
@@ -35,7 +37,9 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
     private val viewModel: QuestViewModel by viewModels()
     private lateinit var adapter: QuestAdapter
-    private var currentSelectedTabType: Int = 0 // 0: Daily, 1: Main, 2: Side
+    private var currentSelectedTabType: Int = 0
+    private var isSortMode = false
+    private var itemTouchHelper: ItemTouchHelper? = null
 
     override fun getViewBinding(
         inflater: LayoutInflater,
@@ -51,17 +55,51 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         setupTabLayout()
 
         binding.btnAdd.setOnClickListener {
-            showCreateQuestDialog()
+            if (!isSortMode) {
+                showCreateQuestDialog()
+            }
         }
+
+        binding.btnSort.setOnClickListener {
+            toggleSortMode()
+        }
+    }
+
+    private fun toggleSortMode() {
+        isSortMode = !isSortMode
+        adapter.isSortMode = isSortMode
+        if (isSortMode) {
+            binding.btnSort.setImageResource(android.R.drawable.ic_menu_save)
+            binding.btnAdd.visibility = View.GONE
+            itemTouchHelper?.attachToRecyclerView(binding.rvQuests)
+        } else {
+            binding.btnSort.setImageResource(android.R.drawable.ic_menu_sort_by_size)
+            binding.btnAdd.visibility = View.VISIBLE
+            itemTouchHelper?.attachToRecyclerView(null)
+            saveSortOrder()
+        }
+    }
+
+    private fun saveSortOrder() {
+        val currentList = adapter.currentList
+        val updatedQuests = currentList.mapIndexed { index, questWithDetails ->
+            questWithDetails.quest.copy(sortOrder = index)
+        }
+        viewModel.updateQuestSortOrders(updatedQuests)
+        Toast.makeText(requireContext(), "排序已保存", Toast.LENGTH_SHORT).show()
     }
 
     private fun setupRecyclerView() {
         adapter = QuestAdapter(
             onQuestClick = { quest ->
-                handleQuestClick(quest)
+                if (!isSortMode) {
+                    handleQuestClick(quest)
+                }
             },
             onQuestLongClick = { quest ->
-                showQuestOptionsDialog(quest)
+                if (!isSortMode) {
+                    showQuestOptionsDialog(quest)
+                }
             },
             calculateProgress = { quest ->
                 viewModel.calculateProgress(quest, viewModel.attributes.value)
@@ -69,6 +107,28 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         )
         binding.rvQuests.layoutManager = LinearLayoutManager(requireContext())
         binding.rvQuests.adapter = adapter
+
+        val touchHelperCallback = object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val fromPosition = viewHolder.adapterPosition
+                val toPosition = target.adapterPosition
+                adapter.swapItems(fromPosition, toPosition)
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+            
+            override fun isLongPressDragEnabled(): Boolean {
+                return isSortMode
+            }
+        }
+        itemTouchHelper = ItemTouchHelper(touchHelperCallback)
     }
 
     private fun setupTabLayout() {
@@ -85,10 +145,10 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
     private fun filterQuests() {
         val allQuests = viewModel.quests.value
         val type = when (currentSelectedTabType) {
-            0 -> 0 // 日常
-            1 -> 1 // 主线
-            2 -> 2 // 支线
-            3 -> 3 // 周常
+            0 -> 0
+            1 -> 1
+            2 -> 2
+            3 -> 3
             else -> 0
         }
         val filtered = allQuests.filter { it.quest.type == type }
@@ -113,7 +173,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 }
                 launch {
                     viewModel.behaviors.collect {
-                        // Just collect to keep the StateFlow active and fetch from DB
                     }
                 }
             }
@@ -124,11 +183,9 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         val quest = questWithDetails.quest
         when (quest.status) {
             0 -> {
-                // In Progress -> Show details (For now, let's show a simple info dialog)
                 showQuestDetailsDialog(questWithDetails)
             }
             1 -> {
-                // Completed Unclaimed -> Claim
                 MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                     .setTitle("领取奖励")
                     .setMessage("恭喜完成任务「${quest.name}」！是否立即领取奖励？")
@@ -140,12 +197,10 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                     .show()
             }
             2 -> {
-                // Claimed
                 Toast.makeText(requireContext(), "任务已完成并领取奖励", Toast.LENGTH_SHORT).show()
                 showQuestDetailsDialog(questWithDetails)
             }
             3 -> {
-                // Failed
                 Toast.makeText(requireContext(), "任务已失败", Toast.LENGTH_SHORT).show()
                 showQuestDetailsDialog(questWithDetails)
             }
@@ -153,44 +208,67 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
     }
 
     private fun showQuestOptionsDialog(questWithDetails: QuestWithDetails) {
-        val options = mutableListOf("删除任务")
-        if (questWithDetails.quest.status == 0) { // Only in progress quests can be given up
-            options.add(0, "放弃任务") // Put it first
-            if (questWithDetails.quest.isFocused) {
-                options.add(1, "取消关注")
+        val quest = questWithDetails.quest
+        val options = mutableListOf<String>()
+        
+        if (quest.status == 0) {
+            options.add("立即完成")
+            options.add("放弃任务")
+            if (quest.isFocused) {
+                options.add("取消关注")
             } else {
-                options.add(1, "设为关注任务")
+                options.add("设为关注任务")
             }
         }
+        options.add("删除任务")
         
         MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle(questWithDetails.quest.name)
+            .setTitle(quest.name)
             .setItems(options.toTypedArray()) { _, which ->
                 val selected = options[which]
-                if (selected == "删除任务") {
-                    MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                        .setTitle("确认删除")
-                        .setMessage("确定要彻底删除该任务吗？该操作不可恢复。")
-                        .setPositiveButton("删除") { _, _ ->
-                            viewModel.deleteQuest(questWithDetails.quest)
-                            Toast.makeText(requireContext(), "任务已删除", Toast.LENGTH_SHORT).show()
-                        }
-                        .setNegativeButton("取消", null)
-                        .show()
-                } else if (selected == "放弃任务") {
-                    MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                        .setTitle("确认放弃")
-                        .setMessage("放弃任务将触发该任务的惩罚（如果有），确定放弃吗？")
-                        .setPositiveButton("放弃") { _, _ ->
-                            viewModel.giveUpQuest(questWithDetails)
-                            Toast.makeText(requireContext(), "任务已放弃", Toast.LENGTH_SHORT).show()
-                        }
-                        .setNegativeButton("取消", null)
-                        .show()
-                } else if (selected == "设为关注任务" || selected == "取消关注") {
-                    viewModel.toggleQuestFocus(questWithDetails.quest)
+                when (selected) {
+                    "删除任务" -> {
+                        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                            .setTitle("确认删除")
+                            .setMessage("确定要彻底删除该任务吗？该操作不可恢复。")
+                            .setPositiveButton("删除") { _, _ ->
+                                viewModel.deleteQuest(quest)
+                                Toast.makeText(requireContext(), "任务已删除", Toast.LENGTH_SHORT).show()
+                            }
+                            .setNegativeButton("取消", null)
+                            .show()
+                    }
+                    "放弃任务" -> {
+                        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                            .setTitle("确认放弃")
+                            .setMessage("放弃任务将触发该任务的惩罚（如果有），确定放弃吗？")
+                            .setPositiveButton("放弃") { _, _ ->
+                                viewModel.giveUpQuest(questWithDetails)
+                                Toast.makeText(requireContext(), "任务已放弃", Toast.LENGTH_SHORT).show()
+                            }
+                            .setNegativeButton("取消", null)
+                            .show()
+                    }
+                    "设为关注任务", "取消关注" -> {
+                        viewModel.toggleQuestFocus(quest)
+                    }
+                    "立即完成" -> {
+                        showInstantCompleteConfirmDialog(questWithDetails)
+                    }
                 }
             }
+            .show()
+    }
+
+    private fun showInstantCompleteConfirmDialog(questWithDetails: QuestWithDetails) {
+        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setTitle("确认立即完成")
+            .setMessage("确认立即完成任务「${questWithDetails.quest.name}」吗？\n\n注意：这将跳过目标达成过程，直接获得奖励。\n任务惩罚将不会被触发。")
+            .setPositiveButton("确认完成") { _, _ ->
+                viewModel.instantCompleteQuest(questWithDetails)
+                Toast.makeText(requireContext(), "任务已立即完成！", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("取消", null)
             .show()
     }
 
@@ -255,10 +333,8 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         var selectedDeadline: Long? = null
 
-        // Handle Type Radio Group
         dialogBinding.spinnerType.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
-                // 0: 日常, 1: 主线, 2: 周常, 3: 支线
                 if (position == 0 || position == 2) {
                     dialogBinding.tvDeadlineLabel.visibility = View.GONE
                     dialogBinding.tvDeadline.visibility = View.GONE
@@ -271,7 +347,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }
 
-        // Handle Deadline Selection
         dialogBinding.tvDeadline.setOnClickListener {
             val calendar = Calendar.getInstance()
             DatePickerDialog(
@@ -288,35 +363,32 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             ).show()
         }
 
-        // Add Attribute Goal
         dialogBinding.btnAddAttrGoal.setOnClickListener {
             if (availableAttributes.isEmpty()) {
                 Toast.makeText(requireContext(), "请先创建属性", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             val rowBinding = ItemQuestAttrGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
-            val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableAttributes.map { it.attribute.name })
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            rowBinding.spinnerAttr.adapter = adapter
+            val attrAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableAttributes.map { it.attribute.name })
+            attrAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            rowBinding.spinnerAttr.adapter = attrAdapter
             rowBinding.btnRemove.setOnClickListener { dialogBinding.llGoalsContainer.removeView(rowBinding.root) }
             rowBinding.root.tag = "attr"
         }
 
-        // Add Behavior Goal
         dialogBinding.btnAddBehGoal.setOnClickListener {
             if (availableBehaviors.isEmpty()) {
                 Toast.makeText(requireContext(), "请先创建行动", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             val rowBinding = ItemQuestBehGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
-            val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableBehaviors.map { it.behavior.name })
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            rowBinding.spinnerBeh.adapter = adapter
+            val behAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableBehaviors.map { it.behavior.name })
+            behAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            rowBinding.spinnerBeh.adapter = behAdapter
             rowBinding.btnRemove.setOnClickListener { dialogBinding.llGoalsContainer.removeView(rowBinding.root) }
             rowBinding.root.tag = "beh"
         }
 
-        // Helper to add Effect (Reward or Punishment)
         fun addEffectRow(container: ViewGroup, isPunishment: Boolean) {
             val rowBinding = ItemQuestEffectBinding.inflate(layoutInflater, container, true)
             
@@ -332,10 +404,10 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
             rowBinding.spinnerType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    if (position == 0) { // Attribute
+                    if (position == 0) {
                         rowBinding.llAttrChange.visibility = View.VISIBLE
                         rowBinding.tilText.visibility = View.GONE
-                    } else { // Text
+                    } else {
                         rowBinding.llAttrChange.visibility = View.GONE
                         rowBinding.tilText.visibility = View.VISIBLE
                     }
@@ -360,10 +432,10 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             }
 
             val type = when (dialogBinding.spinnerType.selectedItemPosition) {
-                0 -> 0 // 日常
-                1 -> 1 // 主线
-                2 -> 3 // 周常
-                else -> 2 // 支线
+                0 -> 0
+                1 -> 1
+                2 -> 3
+                else -> 2
             }
 
             if (type != 0 && type != 3 && selectedDeadline == null) {
@@ -371,7 +443,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 return@setOnClickListener
             }
 
-            // Parse Goals
             val attrGoals = mutableListOf<QuestAttributeGoalEntity>()
             val behGoals = mutableListOf<QuestBehaviorGoalEntity>()
 
@@ -399,7 +470,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 return@setOnClickListener
             }
 
-            // Parse Effects
             val effects = mutableListOf<QuestEffectEntity>()
             
             fun parseEffectsContainer(container: ViewGroup) {
@@ -407,7 +477,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                     val view = container.getChildAt(i)
                     val isPunish = view.tag as Boolean
                     val rb = ItemQuestEffectBinding.bind(view)
-                    val effectType = rb.spinnerType.selectedItemPosition // 0: attr, 1: text
+                    val effectType = rb.spinnerType.selectedItemPosition
                     
                     if (effectType == 0) {
                         val pos = rb.spinnerAttr.selectedItemPosition
