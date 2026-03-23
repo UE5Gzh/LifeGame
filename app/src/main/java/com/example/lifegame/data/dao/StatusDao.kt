@@ -21,6 +21,9 @@ interface StatusDao {
     @Query("SELECT * FROM statuses WHERE isEnabled = 1 AND effectType = 1 AND targetAttributeId = :attributeId")
     fun getEnabledBonusStatusesForAttribute(attributeId: Long): Flow<List<StatusEntity>>
 
+    @Query("SELECT * FROM statuses WHERE isEnabled = 1 AND effectType = 2 AND targetAttributeId = :attributeId")
+    fun getEnabledDecayStatusesForAttribute(attributeId: Long): Flow<List<StatusEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStatus(status: StatusEntity): Long
 

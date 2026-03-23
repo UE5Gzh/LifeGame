@@ -76,8 +76,11 @@ class StatusAdapter(
                 } else {
                     binding.tvNextTrigger.visibility = View.GONE
                 }
-            } else {
+            } else if (status.effectType == 1) {
                 binding.tvEffectInfo.text = "加成: 获取$attrName +${formatValue(status.bonusPercent)}%"
+                binding.tvNextTrigger.visibility = View.GONE
+            } else {
+                binding.tvEffectInfo.text = "衰减: 获取$attrName -${formatValue(status.bonusPercent)}%"
                 binding.tvNextTrigger.visibility = View.GONE
             }
 

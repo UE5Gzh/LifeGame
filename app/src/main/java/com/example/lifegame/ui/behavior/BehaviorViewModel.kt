@@ -169,18 +169,28 @@ class BehaviorViewModel @Inject constructor(
         }
     }
 
-    private suspend fun calculateBonusForAttribute(attributeId: Long, baseChange: Float): Float {
+    private suspend fun calculateFinalChangeForAttribute(attributeId: Long, baseChange: Float): Float {
         if (baseChange <= 0f) return baseChange
         
         val bonusStatuses = statusRepository.getEnabledBonusStatusesForAttribute(attributeId).first()
+        val decayStatuses = statusRepository.getEnabledDecayStatusesForAttribute(attributeId).first()
         
         var totalBonus = 0f
         for (status in bonusStatuses) {
             totalBonus += status.bonusPercent
         }
         
-        val bonusValue = baseChange * (totalBonus / 100f)
-        return baseChange + bonusValue
+        var totalDecay = 0f
+        for (status in decayStatuses) {
+            totalDecay += status.bonusPercent
+        }
+        
+        if (totalDecay > 100f) totalDecay = 100f
+        
+        val afterBonus = baseChange * (1 + totalBonus / 100f)
+        val afterDecay = afterBonus * (1 - totalDecay / 100f)
+        
+        return afterDecay
     }
 
     fun executeBehavior(behaviorWithModifiers: BehaviorWithModifiers, isFocus: Boolean = false) {
@@ -203,7 +213,7 @@ class BehaviorViewModel @Inject constructor(
                     var actualChange = modifier.valueChange
                     
                     if (modifier.valueChange > 0) {
-                        actualChange = calculateBonusForAttribute(modifier.attributeId, modifier.valueChange)
+                        actualChange = calculateFinalChangeForAttribute(modifier.attributeId, modifier.valueChange)
                     }
                     
                     val newValue = attributeToUpdate.currentValue + actualChange

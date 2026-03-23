@@ -148,14 +148,21 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
             selectedColorIndex = colorOptions.indexOf(status.colorHex).takeIf { it >= 0 } ?: 0
             updateColorSelection(dialogBinding)
             
-            if (status.effectType == 0) {
-                dialogBinding.rbPeriodic.isChecked = true
-                dialogBinding.etPeriodValue.setText(status.periodValue.toString())
-                dialogBinding.spinnerPeriodUnit.setSelection(status.periodUnit)
-                dialogBinding.etChangeValue.setText(status.changeValue.toString())
-            } else {
-                dialogBinding.rbBonus.isChecked = true
-                dialogBinding.etBonusPercent.setText(status.bonusPercent.toString())
+            when (status.effectType) {
+                0 -> {
+                    dialogBinding.rbPeriodic.isChecked = true
+                    dialogBinding.etPeriodValue.setText(status.periodValue.toString())
+                    dialogBinding.spinnerPeriodUnit.setSelection(status.periodUnit)
+                    dialogBinding.etChangeValue.setText(status.changeValue.toString())
+                }
+                1 -> {
+                    dialogBinding.rbBonus.isChecked = true
+                    dialogBinding.etBonusPercent.setText(status.bonusPercent.toString())
+                }
+                2 -> {
+                    dialogBinding.rbDecay.isChecked = true
+                    dialogBinding.etDecayPercent.setText(status.bonusPercent.toString())
+                }
             }
         }
         
@@ -208,12 +215,22 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
 
     private fun setupEffectTypeSwitcher(dialogBinding: DialogAddStatusBinding) {
         dialogBinding.rgEffectType.setOnCheckedChangeListener { _, checkedId ->
-            if (checkedId == R.id.rb_periodic) {
-                dialogBinding.llPeriodicParams.visibility = View.VISIBLE
-                dialogBinding.llBonusParams.visibility = View.GONE
-            } else {
-                dialogBinding.llPeriodicParams.visibility = View.GONE
-                dialogBinding.llBonusParams.visibility = View.VISIBLE
+            when (checkedId) {
+                R.id.rb_periodic -> {
+                    dialogBinding.llPeriodicParams.visibility = View.VISIBLE
+                    dialogBinding.llBonusParams.visibility = View.GONE
+                    dialogBinding.llDecayParams.visibility = View.GONE
+                }
+                R.id.rb_bonus -> {
+                    dialogBinding.llPeriodicParams.visibility = View.GONE
+                    dialogBinding.llBonusParams.visibility = View.VISIBLE
+                    dialogBinding.llDecayParams.visibility = View.GONE
+                }
+                R.id.rb_decay -> {
+                    dialogBinding.llPeriodicParams.visibility = View.GONE
+                    dialogBinding.llBonusParams.visibility = View.GONE
+                    dialogBinding.llDecayParams.visibility = View.VISIBLE
+                }
             }
         }
     }
@@ -238,23 +255,33 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
             return false
         }
         
-        if (dialogBinding.rbPeriodic.isChecked) {
-            val periodValue = dialogBinding.etPeriodValue.text.toString().trim()
-            if (periodValue.isEmpty() || periodValue.toIntOrNull()?.let { it <= 0 } != false) {
-                Toast.makeText(requireContext(), "请输入有效的周期值", Toast.LENGTH_SHORT).show()
-                return false
+        when {
+            dialogBinding.rbPeriodic.isChecked -> {
+                val periodValue = dialogBinding.etPeriodValue.text.toString().trim()
+                if (periodValue.isEmpty() || periodValue.toIntOrNull()?.let { it <= 0 } != false) {
+                    Toast.makeText(requireContext(), "请输入有效的周期值", Toast.LENGTH_SHORT).show()
+                    return false
+                }
+                
+                val changeValue = dialogBinding.etChangeValue.text.toString().trim()
+                if (changeValue.isEmpty() || changeValue.toFloatOrNull() == null) {
+                    Toast.makeText(requireContext(), "请输入有效的变动值", Toast.LENGTH_SHORT).show()
+                    return false
+                }
             }
-            
-            val changeValue = dialogBinding.etChangeValue.text.toString().trim()
-            if (changeValue.isEmpty() || changeValue.toFloatOrNull() == null) {
-                Toast.makeText(requireContext(), "请输入有效的变动值", Toast.LENGTH_SHORT).show()
-                return false
+            dialogBinding.rbBonus.isChecked -> {
+                val bonusPercent = dialogBinding.etBonusPercent.text.toString().trim()
+                if (bonusPercent.isEmpty() || bonusPercent.toFloatOrNull()?.let { it < 0 || it > 100 } != false) {
+                    Toast.makeText(requireContext(), "请输入0-100之间的加成百分比", Toast.LENGTH_SHORT).show()
+                    return false
+                }
             }
-        } else {
-            val bonusPercent = dialogBinding.etBonusPercent.text.toString().trim()
-            if (bonusPercent.isEmpty() || bonusPercent.toFloatOrNull()?.let { it < 0 || it > 100 } != false) {
-                Toast.makeText(requireContext(), "请输入0-100之间的加成百分比", Toast.LENGTH_SHORT).show()
-                return false
+            dialogBinding.rbDecay.isChecked -> {
+                val decayPercent = dialogBinding.etDecayPercent.text.toString().trim()
+                if (decayPercent.isEmpty() || decayPercent.toFloatOrNull()?.let { it < 0 || it > 100 } != false) {
+                    Toast.makeText(requireContext(), "请输入0-100之间的衰减百分比", Toast.LENGTH_SHORT).show()
+                    return false
+                }
             }
         }
         
@@ -265,10 +292,42 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         val name = dialogBinding.etName.text.toString().trim()
         val description = dialogBinding.etDescription.text.toString().trim()
         val colorHex = colorOptions[selectedColorIndex]
-        val effectType = if (dialogBinding.rbPeriodic.isChecked) 0 else 1
+        
+        val effectType = when {
+            dialogBinding.rbPeriodic.isChecked -> 0
+            dialogBinding.rbBonus.isChecked -> 1
+            else -> 2
+        }
+        
         val attributes = statusViewModel.attributes.value
         val selectedAttrIndex = dialogBinding.spinnerAttribute.selectedItemPosition
         val targetAttributeId = attributes[selectedAttrIndex].attribute.id
+        
+        val periodValue: Int
+        val periodUnit: Int
+        val changeValue: Float
+        val bonusPercent: Float
+        
+        when (effectType) {
+            0 -> {
+                periodValue = dialogBinding.etPeriodValue.text.toString().toInt()
+                periodUnit = dialogBinding.spinnerPeriodUnit.selectedItemPosition
+                changeValue = dialogBinding.etChangeValue.text.toString().toFloat()
+                bonusPercent = 0f
+            }
+            1 -> {
+                periodValue = 0
+                periodUnit = 0
+                changeValue = 0f
+                bonusPercent = dialogBinding.etBonusPercent.text.toString().toFloat()
+            }
+            else -> {
+                periodValue = 0
+                periodUnit = 0
+                changeValue = 0f
+                bonusPercent = dialogBinding.etDecayPercent.text.toString().toFloat()
+            }
+        }
         
         if (editingStatus != null) {
             val updatedStatus = editingStatus!!.copy(
@@ -277,10 +336,10 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
                 colorHex = colorHex,
                 effectType = effectType,
                 targetAttributeId = targetAttributeId,
-                periodValue = if (effectType == 0) dialogBinding.etPeriodValue.text.toString().toInt() else 0,
-                periodUnit = if (effectType == 0) dialogBinding.spinnerPeriodUnit.selectedItemPosition else 0,
-                changeValue = if (effectType == 0) dialogBinding.etChangeValue.text.toString().toFloat() else 0f,
-                bonusPercent = if (effectType == 1) dialogBinding.etBonusPercent.text.toString().toFloat() else 0f
+                periodValue = periodValue,
+                periodUnit = periodUnit,
+                changeValue = changeValue,
+                bonusPercent = bonusPercent
             )
             statusViewModel.updateStatus(updatedStatus)
             Toast.makeText(requireContext(), "状态已更新", Toast.LENGTH_SHORT).show()
@@ -291,10 +350,10 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
                 colorHex = colorHex,
                 effectType = effectType,
                 targetAttributeId = targetAttributeId,
-                periodValue = if (effectType == 0) dialogBinding.etPeriodValue.text.toString().toInt() else 0,
-                periodUnit = if (effectType == 0) dialogBinding.spinnerPeriodUnit.selectedItemPosition else 0,
-                changeValue = if (effectType == 0) dialogBinding.etChangeValue.text.toString().toFloat() else 0f,
-                bonusPercent = if (effectType == 1) dialogBinding.etBonusPercent.text.toString().toFloat() else 0f
+                periodValue = periodValue,
+                periodUnit = periodUnit,
+                changeValue = changeValue,
+                bonusPercent = bonusPercent
             )
             Toast.makeText(requireContext(), "状态已创建", Toast.LENGTH_SHORT).show()
         }

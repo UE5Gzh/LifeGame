@@ -161,10 +161,12 @@ class StatusViewModel @Inject constructor(
         }
     }
 
-    suspend fun calculateBonusForAttribute(attributeId: Long, baseChange: Float): Float {
+    suspend fun calculateFinalChangeForAttribute(attributeId: Long, baseChange: Float): Float {
         if (baseChange <= 0f) return baseChange
         
         val bonusStatuses = statusRepository.getEnabledBonusStatusesForAttribute(attributeId)
+            .stateIn(viewModelScope).value
+        val decayStatuses = statusRepository.getEnabledDecayStatusesForAttribute(attributeId)
             .stateIn(viewModelScope).value
         
         var totalBonus = 0f
@@ -172,8 +174,17 @@ class StatusViewModel @Inject constructor(
             totalBonus += status.bonusPercent
         }
         
-        val bonusValue = baseChange * (totalBonus / 100f)
-        return baseChange + bonusValue
+        var totalDecay = 0f
+        for (status in decayStatuses) {
+            totalDecay += status.bonusPercent
+        }
+        
+        if (totalDecay > 100f) totalDecay = 100f
+        
+        val afterBonus = baseChange * (1 + totalBonus / 100f)
+        val afterDecay = afterBonus * (1 - totalDecay / 100f)
+        
+        return afterDecay
     }
 
     private fun formatValue(value: Float): String {

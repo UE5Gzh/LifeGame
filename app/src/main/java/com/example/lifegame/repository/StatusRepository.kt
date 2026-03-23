@@ -20,6 +20,10 @@ class StatusRepository @Inject constructor(
         return statusDao.getEnabledBonusStatusesForAttribute(attributeId)
     }
 
+    fun getEnabledDecayStatusesForAttribute(attributeId: Long): Flow<List<StatusEntity>> {
+        return statusDao.getEnabledDecayStatusesForAttribute(attributeId)
+    }
+
     suspend fun getStatusById(id: Long): StatusEntity? {
         return statusDao.getStatusById(id)
     }

@@ -104,24 +104,29 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             app:layout_constraintTop_toBottomOf="@id/tv_effect_type_label">
 
             <RadioButton
                 android:id="@+id/rb_periodic"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:checked="true"
                 android:text="周期性变动"
                 android:textColor="@color/white" />
 
             <RadioButton
                 android:id="@+id/rb_bonus"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:text="属性加成"
+                android:textColor="@color/white" />
+
+            <RadioButton
+                android:id="@+id/rb_decay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="属性衰减"
                 android:textColor="@color/white" />
 
         </RadioGroup>
@@ -243,12 +248,42 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/ll_decay_params"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/spinner_attribute">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="衰减百分比"
+                android:textColor="#A0A0A0"
+                android:textSize="14sp" />
+
+            <EditText
+                android:id="@+id/et_decay_percent"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/edit_text_background"
+                android:hint="如: 10 表示 -10%"
+                android:inputType="numberDecimal"
+                android:paddingHorizontal="12dp"
+                android:textColor="@color/white"
+                android:textColorHint="#808080" />
+
+        </LinearLayout>
+
         <androidx.constraintlayout.widget.Barrier
             android:id="@+id/barrier_params"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:barrierDirection="bottom"
-            app:constraint_referenced_ids="ll_periodic_params,ll_bonus_params" />
+            app:constraint_referenced_ids="ll_periodic_params,ll_bonus_params,ll_decay_params" />
 
         <LinearLayout
             android:id="@+id/ll_buttons"

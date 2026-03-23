@@ -143,18 +143,28 @@ class QuestViewModel @Inject constructor(
         }
     }
 
-    private suspend fun calculateBonusForAttribute(attributeId: Long, baseChange: Float): Float {
+    private suspend fun calculateFinalChangeForAttribute(attributeId: Long, baseChange: Float): Float {
         if (baseChange <= 0f) return baseChange
         
         val bonusStatuses = statusRepository.getEnabledBonusStatusesForAttribute(attributeId).first()
+        val decayStatuses = statusRepository.getEnabledDecayStatusesForAttribute(attributeId).first()
         
         var totalBonus = 0f
         for (status in bonusStatuses) {
             totalBonus += status.bonusPercent
         }
         
-        val bonusValue = baseChange * (totalBonus / 100f)
-        return baseChange + bonusValue
+        var totalDecay = 0f
+        for (status in decayStatuses) {
+            totalDecay += status.bonusPercent
+        }
+        
+        if (totalDecay > 100f) totalDecay = 100f
+        
+        val afterBonus = baseChange * (1 + totalBonus / 100f)
+        val afterDecay = afterBonus * (1 - totalDecay / 100f)
+        
+        return afterDecay
     }
 
     fun calculateProgress(quest: QuestWithDetails, currentAttributes: List<AttributeWithRanks>): Float {
@@ -197,7 +207,7 @@ class QuestViewModel @Inject constructor(
                 if (attrToUpdate != null && effect.valueChange != null && effect.attributeId != null) {
                     var actualChange = effect.valueChange
                     if (effect.valueChange > 0) {
-                        actualChange = calculateBonusForAttribute(effect.attributeId!!, effect.valueChange)
+                        actualChange = calculateFinalChangeForAttribute(effect.attributeId!!, effect.valueChange)
                     }
                     attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + actualChange))
                     rewardDetails.append("${attrToUpdate.name} ${if(actualChange > 0) "+" else ""}${formatValue(actualChange)} ")
@@ -313,7 +323,7 @@ class QuestViewModel @Inject constructor(
                 if (attrToUpdate != null && effect.valueChange != null && effect.attributeId != null) {
                     var actualChange = effect.valueChange
                     if (effect.valueChange > 0) {
-                        actualChange = calculateBonusForAttribute(effect.attributeId!!, effect.valueChange)
+                        actualChange = calculateFinalChangeForAttribute(effect.attributeId!!, effect.valueChange)
                     }
                     attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + actualChange))
                     rewardDetails.append("${attrToUpdate.name} ${if(actualChange > 0) "+" else ""}${formatValue(actualChange)} ")
