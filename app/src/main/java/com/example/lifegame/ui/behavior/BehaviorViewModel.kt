@@ -42,6 +42,18 @@ class BehaviorViewModel @Inject constructor(
     private val _maxEnergy = MutableStateFlow(sharedPreferences.getInt("max_energy", 100))
     val maxEnergy: StateFlow<Int> = _maxEnergy.asStateFlow()
 
+    private val _selectedGroupId = MutableStateFlow<Long?>(sharedPreferences.getLong("selected_group_id", Long.MIN_VALUE).let { if (it == Long.MIN_VALUE) null else it })
+    val selectedGroupId: StateFlow<Long?> = _selectedGroupId.asStateFlow()
+
+    fun saveSelectedGroupId(groupId: Long?) {
+        _selectedGroupId.value = groupId
+        if (groupId == null) {
+            sharedPreferences.edit().remove("selected_group_id").apply()
+        } else {
+            sharedPreferences.edit().putLong("selected_group_id", groupId).apply()
+        }
+    }
+
     val behaviors: StateFlow<List<BehaviorWithModifiers>> = behaviorRepository.allBehaviorsWithModifiers
         .stateIn(
             scope = viewModelScope,
@@ -159,7 +171,6 @@ class BehaviorViewModel @Inject constructor(
             sharedPreferences.edit().putInt("current_energy", newEnergy).apply()
 
             val detailsBuilder = StringBuilder()
-            detailsBuilder.append(if (change >= 0) "精力 +$change" else "精力 $change")
 
             // Apply attribute modifiers
             val currentAttributes = attributeRepository.allAttributesWithRanks.first()
@@ -168,7 +179,8 @@ class BehaviorViewModel @Inject constructor(
                 if (attributeToUpdate != null) {
                     val newValue = attributeToUpdate.currentValue + modifier.valueChange
                     attributeRepository.updateAttribute(attributeToUpdate.copy(currentValue = newValue))
-                    detailsBuilder.append(", ${attributeToUpdate.name} ${if(modifier.valueChange >= 0) "+" else ""}${modifier.valueChange}")
+                    if (detailsBuilder.isNotEmpty()) detailsBuilder.append(", ")
+                    detailsBuilder.append("${attributeToUpdate.name} ${if(modifier.valueChange >= 0) "+" else ""}${modifier.valueChange}")
                 }
             }
 
@@ -177,10 +189,11 @@ class BehaviorViewModel @Inject constructor(
             
             // Log the event
             val title = if (isFocus) "专注完成: ${behavior.name}" else "执行行动: ${behavior.name}"
+            val details = if (detailsBuilder.isNotEmpty()) "属性变动: ${detailsBuilder.toString()}" else "无属性变动"
             logRepository.insertLog(
                 type = "BEHAVIOR_EXECUTION",
                 title = title,
-                details = "影响: ${detailsBuilder.toString()}"
+                details = details
             )
         }
     }

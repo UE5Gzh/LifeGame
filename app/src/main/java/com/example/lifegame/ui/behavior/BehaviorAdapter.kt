@@ -50,9 +50,17 @@ class BehaviorAdapter(
             val builder = SpannableStringBuilder()
             
             // Energy part
-            val energyText = if (behavior.energyType == 0) "⚡ -${behavior.energyValue}" else "⚡ +${behavior.energyValue}"
+            val energyText = if (behavior.energyValue == 0) {
+                "⚡ 无变化"
+            } else {
+                if (behavior.energyType == 0) "⚡ -${behavior.energyValue}" else "⚡ +${behavior.energyValue}"
+            }
             builder.append(energyText)
-            val energyColor = if (behavior.energyType == 0) Color.parseColor("#FFD54F") else Color.parseColor("#81C784")
+            val energyColor = if (behavior.energyValue == 0) {
+                Color.GRAY
+            } else {
+                if (behavior.energyType == 0) Color.parseColor("#FFD54F") else Color.parseColor("#81C784")
+            }
             builder.setSpan(
                 ForegroundColorSpan(energyColor),
                 0,

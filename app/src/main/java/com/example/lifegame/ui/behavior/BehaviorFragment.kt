@@ -278,9 +278,11 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     }
 
     private fun setupTabLayout() {
+        currentSelectedGroupId = viewModel.selectedGroupId.value
         binding.tabGroups.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 currentSelectedGroupId = tab?.tag as? Long
+                viewModel.saveSelectedGroupId(currentSelectedGroupId)
                 filterBehaviors()
             }
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
