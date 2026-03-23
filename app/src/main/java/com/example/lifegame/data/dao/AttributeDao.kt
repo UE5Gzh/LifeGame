@@ -17,6 +17,9 @@ interface AttributeDao {
     @Query("SELECT * FROM attributes ORDER BY sortOrder ASC")
     fun getAllAttributesWithRanks(): Flow<List<AttributeWithRanks>>
 
+    @Query("SELECT * FROM attributes WHERE id = :id")
+    suspend fun getAttributeById(id: Long): AttributeEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAttribute(attribute: AttributeEntity)
 

@@ -13,10 +13,12 @@ import com.example.lifegame.repository.BehaviorRepository
 import com.example.lifegame.repository.AttributeRepository
 import com.example.lifegame.repository.QuestRepository
 import com.example.lifegame.repository.LogRepository
+import com.example.lifegame.repository.StatusRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -28,7 +30,8 @@ class QuestViewModel @Inject constructor(
     private val questRepository: QuestRepository,
     private val attributeRepository: AttributeRepository,
     private val behaviorRepository: BehaviorRepository,
-    private val logRepository: LogRepository
+    private val logRepository: LogRepository,
+    private val statusRepository: StatusRepository
 ) : ViewModel() {
 
     val attributes: StateFlow<List<AttributeWithRanks>> = attributeRepository.allAttributesWithRanks
@@ -139,6 +142,20 @@ class QuestViewModel @Inject constructor(
         }
     }
 
+    private suspend fun calculateBonusForAttribute(attributeId: Long, baseChange: Float): Float {
+        if (baseChange <= 0f) return baseChange
+        
+        val bonusStatuses = statusRepository.getEnabledBonusStatusesForAttribute(attributeId).first()
+        
+        var totalBonus = 0f
+        for (status in bonusStatuses) {
+            totalBonus += status.bonusPercent
+        }
+        
+        val bonusValue = baseChange * (totalBonus / 100f)
+        return baseChange + bonusValue
+    }
+
     fun calculateProgress(quest: QuestWithDetails, currentAttributes: List<AttributeWithRanks>): Float {
         val totalGoals = quest.attributeGoals.size + quest.behaviorGoals.size
         if (totalGoals == 0) return 0f
@@ -176,9 +193,13 @@ class QuestViewModel @Inject constructor(
             
             for (effect in questWithDetails.effects.filter { !it.isPunishment && it.type == 0 }) {
                 val attrToUpdate = currentAttrs.find { it.attribute.id == effect.attributeId }?.attribute
-                if (attrToUpdate != null && effect.valueChange != null) {
-                    attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + effect.valueChange))
-                    rewardDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${formatValue(effect.valueChange)} ")
+                if (attrToUpdate != null && effect.valueChange != null && effect.attributeId != null) {
+                    var actualChange = effect.valueChange
+                    if (effect.valueChange > 0) {
+                        actualChange = calculateBonusForAttribute(effect.attributeId!!, effect.valueChange)
+                    }
+                    attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + actualChange))
+                    rewardDetails.append("${attrToUpdate.name} ${if(actualChange > 0) "+" else ""}${formatValue(actualChange)} ")
                 }
             }
             questRepository.updateQuest(questWithDetails.quest.copy(status = 2, isFocused = false))
@@ -294,9 +315,13 @@ class QuestViewModel @Inject constructor(
             
             for (effect in questWithDetails.effects.filter { !it.isPunishment && it.type == 0 }) {
                 val attrToUpdate = currentAttrs.find { it.attribute.id == effect.attributeId }?.attribute
-                if (attrToUpdate != null && effect.valueChange != null) {
-                    attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + effect.valueChange))
-                    rewardDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${formatValue(effect.valueChange)} ")
+                if (attrToUpdate != null && effect.valueChange != null && effect.attributeId != null) {
+                    var actualChange = effect.valueChange
+                    if (effect.valueChange > 0) {
+                        actualChange = calculateBonusForAttribute(effect.attributeId!!, effect.valueChange)
+                    }
+                    attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + actualChange))
+                    rewardDetails.append("${attrToUpdate.name} ${if(actualChange > 0) "+" else ""}${formatValue(actualChange)} ")
                 }
             }
             

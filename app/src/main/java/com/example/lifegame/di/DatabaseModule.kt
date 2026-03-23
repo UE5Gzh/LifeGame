@@ -7,6 +7,7 @@ import com.example.lifegame.data.dao.BehaviorDao
 import com.example.lifegame.data.dao.LogDao
 import com.example.lifegame.data.dao.QuestDao
 import com.example.lifegame.data.dao.RankDao
+import com.example.lifegame.data.dao.StatusDao
 import com.example.lifegame.data.local.AppDatabase
 import dagger.Module
 import dagger.Provides
@@ -88,5 +89,10 @@ object DatabaseModule {
     @Provides
     fun provideLogDao(database: AppDatabase): LogDao {
         return database.logDao()
+    }
+
+    @Provides
+    fun provideStatusDao(database: AppDatabase): StatusDao {
+        return database.statusDao()
     }
 }

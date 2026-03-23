@@ -7,6 +7,7 @@ import com.example.lifegame.data.dao.BehaviorDao
 import com.example.lifegame.data.dao.BehaviorGroupDao
 import com.example.lifegame.data.dao.QuestDao
 import com.example.lifegame.data.dao.RankDao
+import com.example.lifegame.data.dao.StatusDao
 import com.example.lifegame.data.entity.AttributeEntity
 import com.example.lifegame.data.entity.BehaviorAttributeModifierEntity
 import com.example.lifegame.data.entity.BehaviorEntity
@@ -16,6 +17,7 @@ import com.example.lifegame.data.entity.QuestBehaviorGoalEntity
 import com.example.lifegame.data.entity.QuestEffectEntity
 import com.example.lifegame.data.entity.QuestEntity
 import com.example.lifegame.data.entity.RankEntity
+import com.example.lifegame.data.entity.StatusEntity
 
 import com.example.lifegame.data.dao.LogDao
 import com.example.lifegame.data.entity.LogEntity
@@ -31,9 +33,10 @@ import com.example.lifegame.data.entity.LogEntity
         QuestAttributeGoalEntity::class,
         QuestBehaviorGoalEntity::class,
         QuestEffectEntity::class,
-        LogEntity::class
+        LogEntity::class,
+        StatusEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -43,4 +46,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun behaviorDao(): BehaviorDao
     abstract fun questDao(): QuestDao
     abstract fun logDao(): LogDao
+    abstract fun statusDao(): StatusDao
 }

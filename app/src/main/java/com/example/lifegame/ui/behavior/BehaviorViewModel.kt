@@ -14,6 +14,7 @@ import com.example.lifegame.repository.AttributeRepository
 import com.example.lifegame.repository.BehaviorRepository
 import com.example.lifegame.repository.QuestRepository
 import com.example.lifegame.repository.LogRepository
+import com.example.lifegame.repository.StatusRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ class BehaviorViewModel @Inject constructor(
     private val attributeRepository: AttributeRepository,
     private val questRepository: QuestRepository,
     private val logRepository: LogRepository,
+    private val statusRepository: StatusRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -167,6 +169,20 @@ class BehaviorViewModel @Inject constructor(
         }
     }
 
+    private suspend fun calculateBonusForAttribute(attributeId: Long, baseChange: Float): Float {
+        if (baseChange <= 0f) return baseChange
+        
+        val bonusStatuses = statusRepository.getEnabledBonusStatusesForAttribute(attributeId).first()
+        
+        var totalBonus = 0f
+        for (status in bonusStatuses) {
+            totalBonus += status.bonusPercent
+        }
+        
+        val bonusValue = baseChange * (totalBonus / 100f)
+        return baseChange + bonusValue
+    }
+
     fun executeBehavior(behaviorWithModifiers: BehaviorWithModifiers, isFocus: Boolean = false) {
         viewModelScope.launch {
             val behavior = behaviorWithModifiers.behavior
@@ -184,10 +200,16 @@ class BehaviorViewModel @Inject constructor(
             for (modifier in behaviorWithModifiers.modifiers) {
                 val attributeToUpdate = currentAttributes.find { it.attribute.id == modifier.attributeId }?.attribute
                 if (attributeToUpdate != null) {
-                    val newValue = attributeToUpdate.currentValue + modifier.valueChange
+                    var actualChange = modifier.valueChange
+                    
+                    if (modifier.valueChange > 0) {
+                        actualChange = calculateBonusForAttribute(modifier.attributeId, modifier.valueChange)
+                    }
+                    
+                    val newValue = attributeToUpdate.currentValue + actualChange
                     attributeRepository.updateAttribute(attributeToUpdate.copy(currentValue = newValue))
                     if (detailsBuilder.isNotEmpty()) detailsBuilder.append(", ")
-                    detailsBuilder.append("${attributeToUpdate.name} ${if(modifier.valueChange >= 0) "+" else ""}${formatValue(modifier.valueChange)}")
+                    detailsBuilder.append("${attributeToUpdate.name} ${if(actualChange >= 0) "+" else ""}${formatValue(actualChange)}")
                 }
             }
 

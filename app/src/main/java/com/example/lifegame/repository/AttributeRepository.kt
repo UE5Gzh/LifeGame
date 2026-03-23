@@ -14,6 +14,10 @@ class AttributeRepository @Inject constructor(
 ) {
     val allAttributesWithRanks: Flow<List<AttributeWithRanks>> = attributeDao.getAllAttributesWithRanks()
 
+    suspend fun getAttributeById(id: Long): AttributeEntity? {
+        return attributeDao.getAttributeById(id)
+    }
+
     suspend fun insertAttribute(attribute: AttributeEntity) {
         attributeDao.insertAttribute(attribute)
     }
@@ -31,7 +35,6 @@ class AttributeRepository @Inject constructor(
     }
 
 
-    // Rank operations
     fun getRanksForAttribute(attributeId: Long): Flow<List<RankEntity>> {
         return rankDao.getRanksByAttributeId(attributeId)
     }
