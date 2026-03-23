@@ -62,4 +62,12 @@ class LogViewModel @Inject constructor(
             logRepository.checkAndEnforceLimit()
         }
     }
+
+    fun getDefaultLockSettings(): Map<String, Boolean> {
+        return logRepository.getDefaultLockSettings()
+    }
+
+    fun setDefaultLockForQuestType(questType: Int, isLocked: Boolean) {
+        logRepository.setDefaultLockForQuestType(questType, isLocked)
+    }
 }

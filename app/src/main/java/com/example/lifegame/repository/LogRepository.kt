@@ -29,6 +29,11 @@ class LogRepository @Inject constructor(
         checkAndEnforceLimit()
     }
 
+    suspend fun insertLogWithDefaultLock(type: String, title: String, details: String, questType: Int) {
+        val isLocked = getDefaultLockForQuestType(questType)
+        insertLog(type, title, details, isLocked)
+    }
+
     suspend fun updateLog(log: LogEntity) {
         logDao.updateLog(log)
     }
@@ -56,5 +61,36 @@ class LogRepository @Inject constructor(
 
     fun setMaxLogLimit(limit: Int) {
         sharedPreferences.edit().putInt("max_log_limit", limit).apply()
+    }
+
+    fun getDefaultLockForQuestType(questType: Int): Boolean {
+        val key = when (questType) {
+            0 -> "default_lock_daily_quest"
+            1 -> "default_lock_main_quest"
+            2 -> "default_lock_side_quest"
+            3 -> "default_lock_weekly_quest"
+            else -> return false
+        }
+        return sharedPreferences.getBoolean(key, questType == 1 || questType == 2)
+    }
+
+    fun setDefaultLockForQuestType(questType: Int, isLocked: Boolean) {
+        val key = when (questType) {
+            0 -> "default_lock_daily_quest"
+            1 -> "default_lock_main_quest"
+            2 -> "default_lock_side_quest"
+            3 -> "default_lock_weekly_quest"
+            else -> return
+        }
+        sharedPreferences.edit().putBoolean(key, isLocked).apply()
+    }
+
+    fun getDefaultLockSettings(): Map<String, Boolean> {
+        return mapOf(
+            "daily" to getDefaultLockForQuestType(0),
+            "main" to getDefaultLockForQuestType(1),
+            "side" to getDefaultLockForQuestType(2),
+            "weekly" to getDefaultLockForQuestType(3)
+        )
     }
 }

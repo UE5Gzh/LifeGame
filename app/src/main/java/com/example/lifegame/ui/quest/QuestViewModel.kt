@@ -62,7 +62,6 @@ class QuestViewModel @Inject constructor(
     private fun checkDailyResets() {
         viewModelScope.launch {
             val allQuests = questRepository.getActiveQuestsWithDetails()
-            val now = Calendar.getInstance()
             val todayStart = Calendar.getInstance().apply {
                 set(Calendar.HOUR_OF_DAY, 0)
                 set(Calendar.MINUTE, 0)
@@ -88,10 +87,11 @@ class QuestViewModel @Inject constructor(
                         val failedQuest = q.quest.copy(status = 3, lastResetTime = System.currentTimeMillis(), isFocused = false)
                         questRepository.updateQuest(failedQuest)
                         val punishments = applyPunishments(q)
-                        logRepository.insertLog(
+                        logRepository.insertLogWithDefaultLock(
                             type = "QUEST_ABANDON",
                             title = "日常任务超时失败: ${q.quest.name}",
-                            details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments"
+                            details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments",
+                            questType = 0
                         )
                     } else if (q.quest.status == 2) {
                         questRepository.updateQuest(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()))
@@ -105,10 +105,11 @@ class QuestViewModel @Inject constructor(
                         val failedQuest = q.quest.copy(status = 3, lastResetTime = System.currentTimeMillis(), isFocused = false)
                         questRepository.updateQuest(failedQuest)
                         val punishments = applyPunishments(q)
-                        logRepository.insertLog(
+                        logRepository.insertLogWithDefaultLock(
                             type = "QUEST_ABANDON",
                             title = "周常任务超时失败: ${q.quest.name}",
-                            details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments"
+                            details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments",
+                            questType = 3
                         )
                     } else if (q.quest.status == 2) {
                         questRepository.updateQuest(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()))
@@ -204,16 +205,11 @@ class QuestViewModel @Inject constructor(
             }
             questRepository.updateQuest(questWithDetails.quest.copy(status = 2, isFocused = false))
             
-            val typeStr = when(questWithDetails.quest.type) {
-                0 -> "日常"
-                1 -> "主线"
-                3 -> "周常"
-                else -> "支线"
-            }
-            logRepository.insertLog(
+            logRepository.insertLogWithDefaultLock(
                 type = "QUEST_COMPLETION",
-                title = "完成${typeStr}任务: ${questWithDetails.quest.name}",
-                details = if (rewardDetails.isEmpty()) "获得奖励: 无" else "获得奖励: $rewardDetails"
+                title = "完成${getTypeStr(questWithDetails.quest.type)}任务: ${questWithDetails.quest.name}",
+                details = if (rewardDetails.isEmpty()) "获得奖励: 无" else "获得奖励: $rewardDetails",
+                questType = questWithDetails.quest.type
             )
         }
     }
@@ -230,6 +226,15 @@ class QuestViewModel @Inject constructor(
             }
         }
         return punishmentDetails.toString()
+    }
+
+    private fun getTypeStr(type: Int): String {
+        return when(type) {
+            0 -> "日常"
+            1 -> "主线"
+            3 -> "周常"
+            else -> "支线"
+        }
     }
 
     fun createQuest(
@@ -249,16 +254,11 @@ class QuestViewModel @Inject constructor(
             )
             questRepository.insertQuestWithDetails(q, attributeGoals, behaviorGoals, effects)
             
-            val typeStr = when(type) {
-                0 -> "日常"
-                1 -> "主线"
-                3 -> "周常"
-                else -> "支线"
-            }
-            logRepository.insertLog(
+            logRepository.insertLogWithDefaultLock(
                 type = "QUEST_CREATION",
-                title = "创建${typeStr}任务: $name",
-                details = ""
+                title = "创建${getTypeStr(type)}任务: $name",
+                details = "",
+                questType = type
             )
         }
     }
@@ -274,16 +274,11 @@ class QuestViewModel @Inject constructor(
             questRepository.updateQuest(questWithDetails.quest.copy(status = 3, isFocused = false))
             val punishments = applyPunishments(questWithDetails)
             
-            val typeStr = when(questWithDetails.quest.type) {
-                0 -> "日常"
-                1 -> "主线"
-                3 -> "周常"
-                else -> "支线"
-            }
-            logRepository.insertLog(
+            logRepository.insertLogWithDefaultLock(
                 type = "QUEST_ABANDON",
-                title = "放弃${typeStr}任务: ${questWithDetails.quest.name}",
-                details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments"
+                title = "放弃${getTypeStr(questWithDetails.quest.type)}任务: ${questWithDetails.quest.name}",
+                details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments",
+                questType = questWithDetails.quest.type
             )
         }
     }
@@ -327,16 +322,11 @@ class QuestViewModel @Inject constructor(
             
             questRepository.updateQuest(questWithDetails.quest.copy(status = 1, isFocused = false))
             
-            val typeStr = when(questWithDetails.quest.type) {
-                0 -> "日常"
-                1 -> "主线"
-                3 -> "周常"
-                else -> "支线"
-            }
-            logRepository.insertLog(
+            logRepository.insertLogWithDefaultLock(
                 type = "QUEST_INSTANT_COMPLETE",
-                title = "通过立即完成功能完成${typeStr}任务: ${questWithDetails.quest.name}",
-                details = if (rewardDetails.isEmpty()) "获得奖励: 无" else "获得奖励: $rewardDetails"
+                title = "通过立即完成功能完成${getTypeStr(questWithDetails.quest.type)}任务: ${questWithDetails.quest.name}",
+                details = if (rewardDetails.isEmpty()) "获得奖励: 无" else "获得奖励: $rewardDetails",
+                questType = questWithDetails.quest.type
             )
         }
     }

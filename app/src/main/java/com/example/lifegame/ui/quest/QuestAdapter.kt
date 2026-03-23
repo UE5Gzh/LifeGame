@@ -1,8 +1,6 @@
 package com.example.lifegame.ui.quest
 
 import android.graphics.Color
-import android.text.SpannableStringBuilder
-import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lifegame.data.entity.QuestWithDetails
 import com.example.lifegame.databinding.ItemQuestBinding
+import java.util.Calendar
 import java.util.Collections
 
 class QuestAdapter(
@@ -81,16 +80,7 @@ class QuestAdapter(
                 val progress = calculateProgress(item)
                 binding.pbProgress.progress = (progress * 100).toInt()
 
-                if (quest.type == 0) {
-                    binding.tvDeadline.text = "今日重置"
-                } else if (quest.type == 3) {
-                    binding.tvDeadline.text = "本周重置"
-                } else if (quest.deadline != null) {
-                    val format = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-                    binding.tvDeadline.text = "${format.format(quest.deadline)} 前"
-                } else {
-                    binding.tvDeadline.text = "无期限"
-                }
+                binding.tvDeadline.text = formatDeadlineText(quest.type, quest.deadline, quest.status, quest.lastResetTime)
 
                 binding.root.setOnClickListener {
                     onQuestClick(item)
@@ -99,6 +89,103 @@ class QuestAdapter(
                 binding.root.setOnLongClickListener {
                     onQuestLongClick(item)
                     true
+                }
+            }
+        }
+
+        private fun formatDeadlineText(type: Int, deadline: Long?, status: Int, lastResetTime: Long): String {
+            val now = System.currentTimeMillis()
+            val calendar = Calendar.getInstance()
+            
+            val todayStart = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            
+            val nextDayStart = todayStart + 24 * 60 * 60 * 1000L
+            
+            val weekStart = Calendar.getInstance().apply {
+                firstDayOfWeek = Calendar.MONDAY
+                set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                if (timeInMillis > System.currentTimeMillis()) {
+                    add(Calendar.WEEK_OF_YEAR, -1)
+                }
+            }.timeInMillis
+            
+            val nextWeekStart = weekStart + 7 * 24 * 60 * 60 * 1000L
+            
+            val isCompleted = status == 1 || status == 2
+            val isFailed = status == 3
+
+            when (type) {
+                0 -> {
+                    val resetTime = nextDayStart
+                    val remainingMs = resetTime - now
+                    val remainingHours = (remainingMs / (1000 * 60 * 60)).toInt()
+                    
+                    return when {
+                        isFailed -> "已过期"
+                        isCompleted && remainingHours > 0 -> "已完成，还剩${remainingHours}小时重置"
+                        isCompleted -> "已完成"
+                        remainingHours > 0 -> "还剩${remainingHours}小时重置"
+                        else -> "即将重置"
+                    }
+                }
+                3 -> {
+                    val resetTime = nextWeekStart
+                    val remainingMs = resetTime - now
+                    val remainingDays = (remainingMs / (1000 * 60 * 60 * 24)).toInt()
+                    
+                    return when {
+                        isFailed -> "已过期"
+                        isCompleted && remainingDays > 0 -> "已完成，还剩${remainingDays}天重置"
+                        isCompleted -> "已完成"
+                        remainingDays > 0 -> "还剩${remainingDays}天重置"
+                        else -> "即将重置"
+                    }
+                }
+                1, 2 -> {
+                    if (deadline == null) {
+                        return if (isCompleted) "已完成" else "无期限"
+                    }
+                    
+                    val deadlineStart = Calendar.getInstance().apply {
+                        timeInMillis = deadline
+                        set(Calendar.HOUR_OF_DAY, 23)
+                        set(Calendar.MINUTE, 59)
+                        set(Calendar.SECOND, 59)
+                        set(Calendar.MILLISECOND, 999)
+                    }.timeInMillis
+                    
+                    val remainingMs = deadlineStart - now
+                    
+                    return when {
+                        isFailed -> "已过期"
+                        isCompleted -> "已完成"
+                        remainingMs < 0 -> "已过期"
+                        else -> {
+                            val remainingDays = (remainingMs / (1000 * 60 * 60 * 24)).toInt()
+                            if (remainingDays > 0) {
+                                "还剩${remainingDays}天截止"
+                            } else {
+                                val remainingHours = (remainingMs / (1000 * 60 * 60)).toInt()
+                                if (remainingHours > 0) {
+                                    "还剩${remainingHours}小时截止"
+                                } else {
+                                    "即将截止"
+                                }
+                            }
+                        }
+                    }
+                }
+                else -> {
+                    return if (isCompleted) "已完成" else if (isFailed) "已过期" else "无期限"
                 }
             }
         }

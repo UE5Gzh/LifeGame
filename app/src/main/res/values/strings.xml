@@ -20,8 +20,8 @@
 
     <string-array name="quest_types">
         <item>日常</item>
-        <item>主线</item>
         <item>周常</item>
+        <item>主线</item>
         <item>支线</item>
     </string-array>
 </resources>

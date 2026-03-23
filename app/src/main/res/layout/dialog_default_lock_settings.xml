@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <CheckBox
+        android:id="@+id/cb_daily_quest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="日常任务日志"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:padding="8dp" />
+
+    <CheckBox
+        android:id="@+id/cb_weekly_quest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="周常任务日志"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:padding="8dp" />
+
+    <CheckBox
+        android:id="@+id/cb_main_quest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="主线任务日志"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:padding="8dp" />
+
+    <CheckBox
+        android:id="@+id/cb_side_quest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="支线任务日志"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:padding="8dp" />
+
+</LinearLayout>

@@ -146,9 +146,9 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         val allQuests = viewModel.quests.value
         val type = when (currentSelectedTabType) {
             0 -> 0
-            1 -> 1
-            2 -> 2
-            3 -> 3
+            1 -> 3
+            2 -> 1
+            3 -> 2
             else -> 0
         }
         val filtered = allQuests.filter { it.quest.type == type }
@@ -335,7 +335,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         dialogBinding.spinnerType.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
-                if (position == 0 || position == 2) {
+                if (position == 0 || position == 1) {
                     dialogBinding.tvDeadlineLabel.visibility = View.GONE
                     dialogBinding.tvDeadline.visibility = View.GONE
                     selectedDeadline = null
@@ -433,8 +433,8 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
             val type = when (dialogBinding.spinnerType.selectedItemPosition) {
                 0 -> 0
-                1 -> 1
-                2 -> 3
+                1 -> 3
+                2 -> 1
                 else -> 2
             }
 

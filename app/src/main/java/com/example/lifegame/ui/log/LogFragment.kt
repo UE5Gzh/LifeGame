@@ -1,10 +1,10 @@
 package com.example.lifegame.ui.log
 
 import android.app.DatePickerDialog
-import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Toast
 import androidx.fragment.app.viewModels
@@ -13,7 +13,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
-import androidx.recyclerview.widget.RecyclerView
 import com.example.lifegame.data.entity.LogEntity
 import com.example.lifegame.databinding.FragmentLogBinding
 import com.example.lifegame.ui.base.BaseFragment
@@ -154,6 +153,24 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
     }
 
     private fun showSettingsDialog() {
+        val settingsView = LayoutInflater.from(requireContext()).inflate(
+            android.R.layout.select_dialog_item, null, false
+        )
+        
+        val options = arrayOf("日志存储设置", "任务日志默认锁定设置")
+        
+        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setTitle("日志设置")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showStorageSettingsDialog()
+                    1 -> showDefaultLockSettingsDialog()
+                }
+            }
+            .show()
+    }
+
+    private fun showStorageSettingsDialog() {
         val currentLimit = viewModel.getMaxLogLimit()
         
         val editText = EditText(requireContext()).apply {
@@ -176,6 +193,38 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
                 } else {
                     Toast.makeText(requireContext(), "请输入50到20000之间的数字", Toast.LENGTH_SHORT).show()
                 }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showDefaultLockSettingsDialog() {
+        val settings = viewModel.getDefaultLockSettings()
+        
+        val dialogView = LayoutInflater.from(requireContext()).inflate(
+            com.example.lifegame.R.layout.dialog_default_lock_settings, null, false
+        )
+        
+        val cbDaily = dialogView.findViewById<CheckBox>(com.example.lifegame.R.id.cb_daily_quest)
+        val cbMain = dialogView.findViewById<CheckBox>(com.example.lifegame.R.id.cb_main_quest)
+        val cbSide = dialogView.findViewById<CheckBox>(com.example.lifegame.R.id.cb_side_quest)
+        val cbWeekly = dialogView.findViewById<CheckBox>(com.example.lifegame.R.id.cb_weekly_quest)
+        
+        cbDaily.isChecked = settings["daily"] ?: false
+        cbMain.isChecked = settings["main"] ?: true
+        cbSide.isChecked = settings["side"] ?: true
+        cbWeekly.isChecked = settings["weekly"] ?: false
+
+        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setTitle("任务日志默认锁定设置")
+            .setMessage("开启后，对应类型任务产生的日志将默认锁定，不会被自动清理。")
+            .setView(dialogView)
+            .setPositiveButton("保存") { _, _ ->
+                viewModel.setDefaultLockForQuestType(0, cbDaily.isChecked)
+                viewModel.setDefaultLockForQuestType(1, cbMain.isChecked)
+                viewModel.setDefaultLockForQuestType(2, cbSide.isChecked)
+                viewModel.setDefaultLockForQuestType(3, cbWeekly.isChecked)
+                Toast.makeText(requireContext(), "设置已保存", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("取消", null)
             .show()
