@@ -40,7 +40,8 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     private lateinit var adapter: BehaviorAdapter
     private var isSortMode = false
     private var itemTouchHelper: ItemTouchHelper? = null
-    private var currentSelectedGroupId: Long? = null // null means "All"
+    private var currentSelectedGroupId: Long? = null
+    private var tabSelectedListener: TabLayout.OnTabSelectedListener? = null
 
     private val focusLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
@@ -284,7 +285,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     private fun setupTabLayout() {
         currentSelectedGroupId = viewModel.selectedGroupId.value
         
-        binding.tabGroups.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+        tabSelectedListener = object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 currentSelectedGroupId = tab?.tag as? Long
                 viewModel.saveSelectedGroupId(currentSelectedGroupId)
@@ -292,7 +293,9 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             }
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
-        })
+        }
+        
+        binding.tabGroups.addOnTabSelectedListener(tabSelectedListener!!)
     }
 
     private fun filterBehaviors() {
@@ -309,15 +312,15 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     }
 
     private fun updateTabs(groups: List<BehaviorGroupEntity>, behaviors: List<BehaviorWithModifiers>) {
+        tabSelectedListener?.let { binding.tabGroups.removeOnTabSelectedListener(it) }
+        
         binding.tabGroups.removeAllTabs()
         
-        // "All" Tab
         val allTab = binding.tabGroups.newTab()
         allTab.text = "全部 (${behaviors.size})"
         allTab.tag = null
         binding.tabGroups.addTab(allTab)
 
-        // Custom Groups
         for (group in groups) {
             val count = behaviors.count { it.behavior.groupId == group.id }
             val tab = binding.tabGroups.newTab()
@@ -326,8 +329,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             binding.tabGroups.addTab(tab)
         }
 
-        // Uncategorized Tab (optional, can just use All, but prompt asks for Uncategorized conceptually)
-        // Let's add Uncategorized if there are any
         val uncategorizedCount = behaviors.count { it.behavior.groupId == null }
         if (uncategorizedCount > 0) {
             val uncatTab = binding.tabGroups.newTab()
@@ -336,27 +337,27 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             binding.tabGroups.addTab(uncatTab)
         }
 
-        // Restore selection from saved preference
         val savedGroupId = viewModel.selectedGroupId.value
         val tabCount = binding.tabGroups.tabCount
         var found = false
         
         for (i in 0 until tabCount) {
             val tab = binding.tabGroups.getTabAt(i)
-            if (tab?.tag == savedGroupId) {
-                tab?.select()
+            if (tab != null && tab.tag == savedGroupId) {
+                tab.select()
                 currentSelectedGroupId = savedGroupId
                 found = true
                 break
             }
         }
         
-        // If saved group no longer exists, default to "All"
         if (!found) {
             binding.tabGroups.getTabAt(0)?.select()
             currentSelectedGroupId = null
             viewModel.saveSelectedGroupId(null)
         }
+        
+        tabSelectedListener?.let { binding.tabGroups.addOnTabSelectedListener(it) }
     }
 
     private fun toggleSortMode() {

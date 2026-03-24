@@ -1,6 +1,7 @@
 package com.example.lifegame.ui.widget
 
 import android.content.Context
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
@@ -14,9 +15,10 @@ class AttributeChangeManager(
 ) {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val changeQueue = mutableListOf<AttributeChangeItem>()
-    private var isShowing = false
-    private var currentView: AttributeChangeView? = null
-    private var currentIndex = 0
+    private val activeViews = mutableListOf<AttributeChangeView>()
+    private var isProcessing = false
+    private val maxVisibleAnimations = 3
+    private val animationDelay = 200L
 
     fun showAttributeChanges(
         changes: List<Pair<Long, Float>>,
@@ -35,8 +37,8 @@ class AttributeChangeManager(
         
         changeQueue.addAll(namedChanges)
         
-        if (!isShowing) {
-            showNext()
+        if (!isProcessing) {
+            processQueue()
         }
     }
 
@@ -48,29 +50,39 @@ class AttributeChangeManager(
         
         changeQueue.addAll(filteredChanges)
         
-        if (!isShowing) {
-            showNext()
+        if (!isProcessing) {
+            processQueue()
         }
     }
 
-    private fun showNext() {
-        if (changeQueue.isEmpty()) {
-            isShowing = false
-            currentIndex = 0
+    private fun processQueue() {
+        if (changeQueue.isEmpty() && activeViews.isEmpty()) {
+            isProcessing = false
             return
         }
         
-        isShowing = true
-        val item = changeQueue.removeAt(0)
+        isProcessing = true
         
+        if (changeQueue.isNotEmpty() && activeViews.size < maxVisibleAnimations) {
+            val item = changeQueue.removeAt(0)
+            showAnimation(item)
+            
+            scope.launch {
+                delay(animationDelay)
+                processQueue()
+            }
+        }
+    }
+
+    private fun showAnimation(item: AttributeChangeItem) {
         val view = AttributeChangeView(context)
         view.visibility = View.INVISIBLE
         
         container.post {
-            val screenHeight = container.height
-            val baseBottomMargin = (screenHeight * 0.33f).toInt()
-            val verticalSpacing = 120
-            val bottomMargin = baseBottomMargin + (currentIndex * verticalSpacing)
+            val bottomNavHeight = getBottomNavHeight()
+            val baseBottomMargin = bottomNavHeight + dpToPx(30)
+            val verticalSpacing = dpToPx(60)
+            val bottomMargin = baseBottomMargin + (activeViews.size * verticalSpacing)
             
             val params = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -82,26 +94,49 @@ class AttributeChangeManager(
             container.addView(view, params)
             view.visibility = View.VISIBLE
             
-            currentView = view
-            currentIndex++
+            activeViews.add(view)
             
             view.showAttributeChange(item.attributeName, item.changeValue, item.colorHex) {
                 container.removeView(view)
-                currentView = null
+                activeViews.remove(view)
                 
-                scope.launch {
-                    delay(150)
-                    showNext()
+                if (changeQueue.isEmpty() && activeViews.isEmpty()) {
+                    isProcessing = false
+                } else if (changeQueue.isNotEmpty() && activeViews.size < maxVisibleAnimations) {
+                    processQueue()
                 }
             }
         }
     }
 
+    private fun getBottomNavHeight(): Int {
+        val activity = context.findActivity()
+        val navView = activity?.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(com.example.lifegame.R.id.bottom_navigation)
+        return navView?.height ?: dpToPx(56)
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            dp.toFloat(),
+            context.resources.displayMetrics
+        ).toInt()
+    }
+
+    private fun Context.findActivity(): android.app.Activity? {
+        var context = this
+        while (context is android.content.ContextWrapper) {
+            if (context is android.app.Activity) return context
+            context = context.baseContext
+        }
+        return null
+    }
+
     fun clear() {
-        currentView?.cancel()
+        activeViews.forEach { it.cancel() }
+        activeViews.clear()
         changeQueue.clear()
-        isShowing = false
-        currentIndex = 0
+        isProcessing = false
         container.removeAllViews()
     }
 
