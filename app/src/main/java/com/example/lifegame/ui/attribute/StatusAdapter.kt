@@ -72,20 +72,23 @@ class StatusAdapter(
 
             val isExpired = status.durationValue > 0 && isStatusExpired(status)
             
-            if (status.isEnabled && status.durationValue > 0 && !isExpired) {
-                binding.tvNextTrigger.visibility = View.VISIBLE
-                binding.tvNextTrigger.text = calculateRemainingTime(status)
-            } else if (isExpired) {
-                binding.tvNextTrigger.visibility = View.VISIBLE
-                binding.tvNextTrigger.text = "已到期"
+            if (status.durationValue > 0) {
+                binding.tvDuration.visibility = View.VISIBLE
+                if (isExpired) {
+                    binding.tvDuration.text = "⏱ 已到期"
+                    binding.tvDuration.setTextColor(Color.parseColor("#F44336"))
+                } else {
+                    binding.tvDuration.text = "⏱ ${calculateRemainingTime(status)}"
+                    binding.tvDuration.setTextColor(Color.parseColor("#888888"))
+                }
             } else {
-                binding.tvNextTrigger.visibility = View.GONE
+                binding.tvDuration.visibility = View.GONE
             }
 
             try {
-                binding.cardContainer.setCardBackgroundColor(Color.parseColor(status.colorHex))
+                binding.viewColorIndicator.setBackgroundColor(Color.parseColor(status.colorHex))
             } catch (e: Exception) {
-                binding.cardContainer.setCardBackgroundColor(Color.parseColor("#21212B"))
+                binding.viewColorIndicator.setBackgroundColor(Color.parseColor("#9C27B0"))
             }
 
             if (isSortMode) {
