@@ -210,7 +210,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 }
                 launch {
                     viewModel.quests.collect {
-                        viewModel.checkQuestCompletions(viewModel.attributes.value)
                         filterQuests()
                     }
                 }
