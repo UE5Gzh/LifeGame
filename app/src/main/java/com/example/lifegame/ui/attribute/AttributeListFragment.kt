@@ -76,7 +76,7 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
         }
 
         binding.cardFocusedQuest.visibility = View.VISIBLE
-        binding.tvFocusedQuestName.text = "关注任务：${quest.quest.name}"
+        binding.tvFocusedQuestName.text = "${quest.quest.name}"
 
         val progress = calculateQuestProgress(quest)
         binding.pbFocusedQuest.progress = progress

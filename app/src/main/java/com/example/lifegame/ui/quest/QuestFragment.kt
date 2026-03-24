@@ -21,6 +21,9 @@ import com.example.lifegame.data.entity.QuestBehaviorGoalEntity
 import com.example.lifegame.data.entity.QuestEffectEntity
 import com.example.lifegame.data.entity.QuestWithDetails
 import com.example.lifegame.databinding.DialogCreateQuestBinding
+import com.example.lifegame.data.entity.QuestEntity
+import com.example.lifegame.databinding.DialogConfirmBinding
+import com.example.lifegame.databinding.DialogQuestOptionsBinding
 import com.example.lifegame.databinding.FragmentQuestBinding
 import com.example.lifegame.databinding.ItemQuestAttrGoalBinding
 import com.example.lifegame.databinding.ItemQuestBehGoalBinding
@@ -247,57 +250,91 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
     private fun showQuestOptionsDialog(questWithDetails: QuestWithDetails) {
         val quest = questWithDetails.quest
-        val options = mutableListOf<String>()
+        val dialogBinding = DialogQuestOptionsBinding.inflate(layoutInflater)
         
-        if (quest.status == 0) {
-            options.add("立即完成")
-            options.add("放弃任务")
-            options.add("编辑任务")
-            if (quest.isFocused) {
-                options.add("取消关注")
-            } else {
-                options.add("设为关注任务")
-            }
+        dialogBinding.btnInstantComplete.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
+        dialogBinding.btnGiveUp.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
+        dialogBinding.btnEdit.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
+        dialogBinding.btnFocus.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
+        dialogBinding.btnFocus.text = if (quest.isFocused) "取消关注" else "设为关注任务"
+        dialogBinding.btnDelete.visibility = View.VISIBLE
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnInstantComplete.setOnClickListener {
+            showInstantCompleteConfirmDialog(questWithDetails)
+            dialog.dismiss()
         }
-        options.add("删除任务")
-        
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle(quest.name)
-            .setItems(options.toTypedArray()) { _, which ->
-                val selected = options[which]
-                when (selected) {
-                    "删除任务" -> {
-                        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                            .setTitle("确认删除")
-                            .setMessage("确定要彻底删除该任务吗？该操作不可恢复。")
-                            .setPositiveButton("删除") { _, _ ->
-                                viewModel.deleteQuest(quest)
-                            }
-                            .setNegativeButton("取消", null)
-                            .show()
-                    }
-                    "放弃任务" -> {
-                        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                            .setTitle("确认放弃")
-                            .setMessage("放弃任务将触发该任务的惩罚（如果有），确定放弃吗？")
-                            .setPositiveButton("放弃") { _, _ ->
-                                viewModel.giveUpQuest(questWithDetails)
-                            }
-                            .setNegativeButton("取消", null)
-                            .show()
-                    }
-                    "编辑任务" -> {
-                        showEditQuestDialog(questWithDetails)
-                    }
-                    "设为关注任务", "取消关注" -> {
-                        viewModel.toggleQuestFocus(quest)
-                    }
-                    "立即完成" -> {
-                        showInstantCompleteConfirmDialog(questWithDetails)
-                    }
-                }
-            }
-            .show()
+
+        dialogBinding.btnGiveUp.setOnClickListener {
+            showGiveUpConfirmDialog(questWithDetails)
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnEdit.setOnClickListener {
+            showEditQuestDialog(questWithDetails)
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnFocus.setOnClickListener {
+            viewModel.toggleQuestFocus(quest)
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnDelete.setOnClickListener {
+            showDeleteConfirmDialog(quest)
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showDeleteConfirmDialog(quest: QuestEntity) {
+        val dialogBinding = DialogConfirmBinding.inflate(layoutInflater)
+        dialogBinding.tvTitle.text = "确认删除"
+        dialogBinding.tvMessage.text = "确定要彻底删除该任务吗？该操作不可恢复。"
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            viewModel.deleteQuest(quest)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showGiveUpConfirmDialog(questWithDetails: QuestWithDetails) {
+        val dialogBinding = DialogConfirmBinding.inflate(layoutInflater)
+        dialogBinding.tvTitle.text = "确认放弃"
+        dialogBinding.tvMessage.text = "放弃任务将触发该任务的惩罚（如果有），确定放弃吗？"
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            viewModel.giveUpQuest(questWithDetails)
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showInstantCompleteConfirmDialog(questWithDetails: QuestWithDetails) {

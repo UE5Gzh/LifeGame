@@ -23,7 +23,7 @@ enum class CelebrationType(val priority: Int) {
 }
 
 object CelebrationBus {
-    private val _events = MutableSharedFlow<CelebrationEvent>(replay = 16, extraBufferCapacity = 16)
+    private val _events = MutableSharedFlow<CelebrationEvent>(extraBufferCapacity = 16)
     val events: SharedFlow<CelebrationEvent> = _events.asSharedFlow()
     
     fun postRankUp(attributeName: String, oldRank: String, newRank: String) {

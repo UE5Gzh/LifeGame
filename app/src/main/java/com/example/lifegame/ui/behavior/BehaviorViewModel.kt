@@ -301,6 +301,15 @@ class BehaviorViewModel @Inject constructor(
                 oldRank = oldRankName,
                 newRank = newRankName
             )
+            
+            viewModelScope.launch {
+                logRepository.insertLog(
+                    type = "RANK_UP",
+                    title = "段位提升: $attributeName",
+                    details = "$oldRankName → $newRankName",
+                    isLocked = true
+                )
+            }
         }
     }
 

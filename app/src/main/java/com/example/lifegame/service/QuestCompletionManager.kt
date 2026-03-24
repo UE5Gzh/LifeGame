@@ -24,6 +24,7 @@ class QuestCompletionManager @Inject constructor(
     private var monitorJob: Job? = null
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences("quest_celebration_prefs", Context.MODE_PRIVATE)
     private val celebratedQuestIds = mutableSetOf<Long>()
+    private val processingQuestIds = mutableSetOf<Long>()
 
     fun start() {
         if (monitorJob?.isActive == true) return
@@ -38,7 +39,7 @@ class QuestCompletionManager @Inject constructor(
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
-                delay(60_000L)
+                delay(10_000L)
             }
         }
     }
@@ -84,17 +85,41 @@ class QuestCompletionManager @Inject constructor(
         val currentAttributes = attributeRepository.allAttributesWithRanks.first()
         
         for (quest in allQuests) {
-            if (quest.quest.status == 0 && quest.quest.id !in celebratedQuestIds) {
-                val progress = calculateProgress(quest, currentAttributes)
-                if (progress >= 1f) {
-                    celebratedQuestIds.add(quest.quest.id)
-                    saveCelebratedQuestIds()
-                    
-                    questRepository.updateQuest(quest.quest.copy(status = 1))
-                    
-                    CelebrationBus.postQuestComplete(quest.quest.name, quest.quest.type)
-                }
+            processQuestCompletion(quest, currentAttributes)
+        }
+    }
+
+    suspend fun checkImmediateCompletion(questId: Long) {
+        if (questId in celebratedQuestIds || questId in processingQuestIds) return
+        
+        val allQuests = questRepository.getActiveQuestsWithDetails()
+        val quest = allQuests.find { it.quest.id == questId } ?: return
+        val currentAttributes = attributeRepository.allAttributesWithRanks.first()
+        
+        processQuestCompletion(quest, currentAttributes)
+    }
+
+    private suspend fun processQuestCompletion(quest: QuestWithDetails, currentAttributes: List<AttributeWithRanks>) {
+        val questId = quest.quest.id
+        
+        if (quest.quest.status != 0) return
+        if (questId in celebratedQuestIds) return
+        if (questId in processingQuestIds) return
+        
+        processingQuestIds.add(questId)
+        
+        try {
+            val progress = calculateProgress(quest, currentAttributes)
+            if (progress >= 1f) {
+                celebratedQuestIds.add(questId)
+                saveCelebratedQuestIds()
+                
+                questRepository.updateQuest(quest.quest.copy(status = 1))
+                
+                CelebrationBus.postQuestComplete(quest.quest.name, quest.quest.type)
             }
+        } finally {
+            processingQuestIds.remove(questId)
         }
     }
 

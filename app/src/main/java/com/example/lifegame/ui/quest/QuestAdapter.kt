@@ -37,9 +37,19 @@ class QuestAdapter(
             val quest = item.quest
             binding.tvQuestName.text = quest.name
             
+            val typeText = when (quest.type) {
+                0 -> "日常"
+                1 -> "主线"
+                2 -> "支线"
+                3 -> "周常"
+                else -> "任务"
+            }
+            binding.tvQuestType.text = typeText
+            
             if (isSortMode) {
                 binding.ivDragHandle.visibility = View.VISIBLE
                 binding.ivFocusedStar.visibility = View.GONE
+                binding.tvQuestType.visibility = View.GONE
                 binding.root.setOnClickListener(null)
                 binding.root.setOnLongClickListener(null)
             } else {
@@ -59,26 +69,31 @@ class QuestAdapter(
                         binding.tvStatus.text = "进行中"
                         binding.tvStatus.setTextColor(Color.parseColor("#A0A0A0"))
                         binding.cardContainer.setCardBackgroundColor(Color.parseColor("#21212B"))
+                        binding.pbProgress.setIndicatorColor(Color.parseColor("#9C27B0"))
                     }
                     1 -> {
                         binding.tvStatus.text = "可领取"
                         binding.tvStatus.setTextColor(Color.parseColor("#4CAF50"))
                         binding.cardContainer.setCardBackgroundColor(Color.parseColor("#1B3320"))
+                        binding.pbProgress.setIndicatorColor(Color.parseColor("#4CAF50"))
                     }
                     2 -> {
                         binding.tvStatus.text = "已领取"
                         binding.tvStatus.setTextColor(Color.parseColor("#606060"))
                         binding.cardContainer.setCardBackgroundColor(Color.parseColor("#1A1A1A"))
+                        binding.pbProgress.setIndicatorColor(Color.parseColor("#606060"))
                     }
                     3 -> {
                         binding.tvStatus.text = "已失败"
                         binding.tvStatus.setTextColor(Color.parseColor("#F44336"))
                         binding.cardContainer.setCardBackgroundColor(Color.parseColor("#331A1A"))
+                        binding.pbProgress.setIndicatorColor(Color.parseColor("#F44336"))
                     }
                 }
 
                 val progress = calculateProgress(item)
                 binding.pbProgress.progress = (progress * 100).toInt()
+                binding.tvProgressPercent.text = "${(progress * 100).toInt()}%"
 
                 binding.tvDeadline.text = formatDeadlineText(quest.type, quest.deadline, quest.status, quest.lastResetTime)
 
