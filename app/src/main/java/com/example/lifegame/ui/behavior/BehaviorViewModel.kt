@@ -16,6 +16,7 @@ import com.example.lifegame.repository.BehaviorRepository
 import com.example.lifegame.repository.QuestRepository
 import com.example.lifegame.repository.LogRepository
 import com.example.lifegame.repository.StatusRepository
+import com.example.lifegame.service.QuestCompletionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,7 @@ class BehaviorViewModel @Inject constructor(
     private val questRepository: QuestRepository,
     private val logRepository: LogRepository,
     private val statusRepository: StatusRepository,
+    private val questCompletionManager: com.example.lifegame.service.QuestCompletionManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -256,6 +258,8 @@ class BehaviorViewModel @Inject constructor(
 
             val completedQuests = questRepository.incrementBehaviorGoalCountAndCheckCompletion(behavior.id, currentAttributes)
             for (quest in completedQuests) {
+                questCompletionManager.markCelebrated(quest.quest.id)
+                questRepository.updateQuest(quest.quest.copy(status = 1))
                 com.example.lifegame.util.CelebrationBus.postQuestComplete(
                     questName = quest.quest.name,
                     questType = quest.quest.type
