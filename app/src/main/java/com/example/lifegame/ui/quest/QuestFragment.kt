@@ -22,12 +22,15 @@ import com.example.lifegame.data.entity.QuestEffectEntity
 import com.example.lifegame.data.entity.QuestWithDetails
 import com.example.lifegame.databinding.DialogCreateQuestBinding
 import com.example.lifegame.data.entity.QuestEntity
+import com.example.lifegame.databinding.DialogClaimRewardBinding
 import com.example.lifegame.databinding.DialogConfirmBinding
+import com.example.lifegame.databinding.DialogQuestDetailBinding
 import com.example.lifegame.databinding.DialogQuestOptionsBinding
 import com.example.lifegame.databinding.FragmentQuestBinding
 import com.example.lifegame.databinding.ItemQuestAttrGoalBinding
 import com.example.lifegame.databinding.ItemQuestBehGoalBinding
 import com.example.lifegame.databinding.ItemQuestEffectBinding
+import com.example.lifegame.databinding.ItemQuestGoalBinding
 import com.example.lifegame.ui.base.BaseFragment
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -230,14 +233,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 showQuestDetailsDialog(questWithDetails)
             }
             1 -> {
-                MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                    .setTitle("领取奖励")
-                    .setMessage("恭喜完成任务「${quest.name}」！是否立即领取奖励？")
-                    .setPositiveButton("领取") { _, _ ->
-                        viewModel.claimReward(questWithDetails)
-                    }
-                    .setNegativeButton("取消", null)
-                    .show()
+                showClaimRewardDialog(questWithDetails)
             }
             2 -> {
                 showQuestDetailsDialog(questWithDetails)
@@ -349,54 +345,146 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
     }
 
     private fun showQuestDetailsDialog(q: QuestWithDetails) {
-        val msg = StringBuilder()
-        msg.append("目标:\n")
+        val dialogBinding = DialogQuestDetailBinding.inflate(layoutInflater)
+        
+        dialogBinding.tvQuestName.text = q.quest.name
+        
+        val typeText = when (q.quest.type) {
+            0 -> "日常"
+            1 -> "主线"
+            2 -> "支线"
+            3 -> "周常"
+            else -> "任务"
+        }
+        dialogBinding.tvQuestType.text = typeText
+
+        dialogBinding.llGoalsContainer.removeAllViews()
         q.attributeGoals.forEach { ag ->
-            val attrName = viewModel.attributes.value.find { it.attribute.id == ag.attributeId }?.attribute?.name ?: "未知属性"
-            val currentVal = viewModel.attributes.value.find { it.attribute.id == ag.attributeId }?.attribute?.currentValue ?: 0
+            val goalBinding = ItemQuestGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
+            val attr = viewModel.attributes.value.find { it.attribute.id == ag.attributeId }?.attribute
+            val attrName = attr?.name ?: "未知属性"
+            val currentVal = attr?.currentValue ?: 0f
             val targetVal = ag.targetValue
-            val progress = if (targetVal > 0) ((currentVal.toFloat() / targetVal) * 100).toInt().coerceAtMost(100) else 100
-            msg.append("- $attrName $currentVal/$targetVal ($progress%)\n")
+            val progress = if (targetVal > 0) ((currentVal / targetVal) * 100).toInt().coerceAtMost(100) else 100
+            
+            goalBinding.tvGoalName.text = attrName
+            goalBinding.tvGoalProgressText.text = "${currentVal.toInt()}/${targetVal.toInt()}"
+            goalBinding.pbGoalProgress.progress = progress
+            goalBinding.tvGoalPercent.text = "$progress%"
         }
         q.behaviorGoals.forEach { bg ->
+            val goalBinding = ItemQuestGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
             val behName = viewModel.behaviors.value.find { it.behavior.id == bg.behaviorId }?.behavior?.name ?: "未知行动"
             val targetCount = bg.targetCount
             val currentCount = bg.currentCount
             val progress = if (targetCount > 0) ((currentCount.toFloat() / targetCount) * 100).toInt().coerceAtMost(100) else 100
-            msg.append("- $behName $currentCount/${targetCount}次 ($progress%)\n")
+            
+            goalBinding.tvGoalName.text = behName
+            goalBinding.tvGoalProgressText.text = "$currentCount/$targetCount 次"
+            goalBinding.pbGoalProgress.progress = progress
+            goalBinding.tvGoalPercent.text = "$progress%"
         }
-        
-        msg.append("\n奖励:\n")
-        if (q.effects.none { !it.isPunishment }) msg.append("- 无\n")
-        q.effects.filter { !it.isPunishment }.forEach { e ->
-            if (e.type == 0) {
-                val attrName = viewModel.attributes.value.find { it.attribute.id == e.attributeId }?.attribute?.name ?: "未知属性"
-                val sign = if ((e.valueChange ?: 0f) >= 0f) "+" else ""
-                msg.append("- $attrName $sign${e.valueChange}\n")
-            } else {
-                msg.append("- ${e.text}\n")
+
+        dialogBinding.llRewardsContainer.removeAllViews()
+        val rewards = q.effects.filter { !it.isPunishment }
+        if (rewards.isEmpty()) {
+            val tv = android.widget.TextView(requireContext())
+            tv.text = "无奖励"
+            tv.setTextColor(android.graphics.Color.parseColor("#888888"))
+            tv.textSize = 14f
+            dialogBinding.llRewardsContainer.addView(tv)
+        } else {
+            rewards.forEach { e ->
+                val tv = android.widget.TextView(requireContext())
+                if (e.type == 0) {
+                    val attrName = viewModel.attributes.value.find { it.attribute.id == e.attributeId }?.attribute?.name ?: "未知属性"
+                    val sign = if ((e.valueChange ?: 0f) >= 0f) "+" else ""
+                    tv.text = "• $attrName $sign${e.valueChange}"
+                } else {
+                    tv.text = "• ${e.text}"
+                }
+                tv.setTextColor(android.graphics.Color.parseColor("#CCCCCC"))
+                tv.textSize = 14f
+                dialogBinding.llRewardsContainer.addView(tv)
             }
         }
 
         val punishments = q.effects.filter { it.isPunishment }
         if (punishments.isNotEmpty()) {
-            msg.append("\n惩罚:\n")
+            dialogBinding.sectionPunishments.visibility = View.VISIBLE
+            dialogBinding.llPunishmentsContainer.removeAllViews()
             punishments.forEach { e ->
+                val tv = android.widget.TextView(requireContext())
                 if (e.type == 0) {
                     val attrName = viewModel.attributes.value.find { it.attribute.id == e.attributeId }?.attribute?.name ?: "未知属性"
                     val sign = if ((e.valueChange ?: 0f) >= 0f) "+" else ""
-                    msg.append("- $attrName $sign${e.valueChange}\n")
+                    tv.text = "• $attrName $sign${e.valueChange}"
                 } else {
-                    msg.append("- ${e.text}\n")
+                    tv.text = "• ${e.text}"
                 }
+                tv.setTextColor(android.graphics.Color.parseColor("#FF6B6B"))
+                tv.textSize = 14f
+                dialogBinding.llPunishmentsContainer.addView(tv)
+            }
+        } else {
+            dialogBinding.sectionPunishments.visibility = View.GONE
+        }
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnClose.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showClaimRewardDialog(questWithDetails: QuestWithDetails) {
+        val dialogBinding = DialogClaimRewardBinding.inflate(layoutInflater)
+        val quest = questWithDetails.quest
+        
+        dialogBinding.tvQuestName.text = "「${quest.name}」"
+
+        dialogBinding.llRewardsContainer.removeAllViews()
+        val rewards = questWithDetails.effects.filter { !it.isPunishment }
+        if (rewards.isEmpty()) {
+            val tv = android.widget.TextView(requireContext())
+            tv.text = "无奖励"
+            tv.setTextColor(android.graphics.Color.parseColor("#888888"))
+            tv.textSize = 14f
+            dialogBinding.llRewardsContainer.addView(tv)
+        } else {
+            rewards.forEach { e ->
+                val tv = android.widget.TextView(requireContext())
+                if (e.type == 0) {
+                    val attrName = viewModel.attributes.value.find { it.attribute.id == e.attributeId }?.attribute?.name ?: "未知属性"
+                    val sign = if ((e.valueChange ?: 0f) >= 0f) "+" else ""
+                    tv.text = "• $attrName $sign${e.valueChange}"
+                } else {
+                    tv.text = "• ${e.text}"
+                }
+                tv.setTextColor(android.graphics.Color.parseColor("#CCCCCC"))
+                tv.textSize = 14f
+                dialogBinding.llRewardsContainer.addView(tv)
             }
         }
 
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle(q.quest.name)
-            .setMessage(msg.toString())
-            .setPositiveButton("确定", null)
-            .show()
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnClaim.setOnClickListener {
+            viewModel.claimReward(questWithDetails)
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showCreateQuestDialog() {
