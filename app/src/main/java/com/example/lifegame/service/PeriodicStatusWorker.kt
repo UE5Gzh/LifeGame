@@ -7,7 +7,6 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.example.lifegame.data.entity.StatusEntity
 import com.example.lifegame.repository.AttributeRepository
 import com.example.lifegame.repository.LogRepository
 import com.example.lifegame.repository.StatusRepository
@@ -29,10 +28,21 @@ class PeriodicStatusWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         try {
             val now = System.currentTimeMillis()
-            val enabledStatuses = statusRepository.enabledPeriodicStatuses.first()
+            val enabledStatusesWithEffects = statusRepository.enabledStatusesWithEffects.first()
             
-            for (status in enabledStatuses) {
-                processPeriodicStatus(status, now)
+            for (statusWithEffects in enabledStatusesWithEffects) {
+                val status = statusWithEffects.status
+                
+                if (isStatusExpired(status, now)) {
+                    autoDisableStatus(status)
+                    continue
+                }
+                
+                for (effect in statusWithEffects.effects) {
+                    if (effect.effectType == 0) {
+                        processPeriodicEffect(status, effect, now)
+                    }
+                }
             }
             
             return Result.success()
@@ -41,26 +51,30 @@ class PeriodicStatusWorker @AssistedInject constructor(
         }
     }
 
-    private suspend fun processPeriodicStatus(status: StatusEntity, now: Long) {
-        val periodMillis = if (status.periodUnit == 0) {
-            status.periodValue * 60 * 60 * 1000L
+    private suspend fun processPeriodicEffect(
+        status: com.example.lifegame.data.entity.StatusEntity,
+        effect: com.example.lifegame.data.entity.StatusEffectEntity,
+        now: Long
+    ) {
+        val periodMillis = if (effect.periodUnit == 0) {
+            effect.periodValue * 60 * 60 * 1000L
         } else {
-            status.periodValue * 24 * 60 * 60 * 1000L
+            effect.periodValue * 24 * 60 * 60 * 1000L
         }
         
-        val lastTrigger = if (status.lastTriggerTime == 0L) status.startTime else status.lastTriggerTime
+        val lastTrigger = if (effect.lastTriggerTime == 0L) status.startTime else effect.lastTriggerTime
         var nextTrigger = lastTrigger + periodMillis
         
         while (nextTrigger <= now) {
-            val attr = attributeRepository.getAttributeById(status.targetAttributeId)
+            val attr = attributeRepository.getAttributeById(effect.targetAttributeId)
             if (attr != null) {
-                val newValue = attr.currentValue + status.changeValue
+                val newValue = attr.currentValue + effect.changeValue
                 attributeRepository.updateAttribute(attr.copy(currentValue = newValue))
                 
                 logRepository.insertLog(
                     type = "STATUS_TRIGGERED",
                     title = "状态触发: ${status.name}",
-                    details = "${attr.name} ${if (status.changeValue >= 0) "+" else ""}${formatValue(status.changeValue)}"
+                    details = "${attr.name} ${if (effect.changeValue >= 0) "+" else ""}${formatValue(effect.changeValue)}"
                 )
             }
             
@@ -68,8 +82,32 @@ class PeriodicStatusWorker @AssistedInject constructor(
         }
         
         if (nextTrigger > lastTrigger + periodMillis) {
-            statusRepository.updateStatus(status.copy(lastTriggerTime = nextTrigger - periodMillis))
+            statusRepository.updateEffect(effect.copy(lastTriggerTime = nextTrigger - periodMillis))
         }
+    }
+
+    private fun isStatusExpired(status: com.example.lifegame.data.entity.StatusEntity, now: Long): Boolean {
+        if (status.durationValue <= 0 || !status.isEnabled) return false
+        
+        val durationMillis = when (status.durationUnit) {
+            0 -> status.durationValue * 60 * 1000L
+            1 -> status.durationValue * 60 * 60 * 1000L
+            else -> status.durationValue * 24 * 60 * 60 * 1000L
+        }
+        
+        val elapsed = now - status.startTime
+        return elapsed >= durationMillis
+    }
+
+    private suspend fun autoDisableStatus(status: com.example.lifegame.data.entity.StatusEntity) {
+        val updatedStatus = status.copy(isEnabled = false)
+        statusRepository.updateStatus(updatedStatus)
+        
+        logRepository.insertLog(
+            type = "STATUS_EXPIRED",
+            title = "状态到期: ${status.name}",
+            details = "持续时间已结束，自动关闭"
+        )
     }
 
     private fun formatValue(value: Float): String {

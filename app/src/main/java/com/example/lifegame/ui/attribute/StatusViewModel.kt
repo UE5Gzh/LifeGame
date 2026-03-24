@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.lifegame.data.entity.AttributeEntity
 import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.data.entity.StatusEntity
+import com.example.lifegame.data.entity.StatusEffectEntity
+import com.example.lifegame.data.entity.StatusWithEffects
 import com.example.lifegame.repository.AttributeRepository
 import com.example.lifegame.repository.StatusRepository
 import com.example.lifegame.repository.LogRepository
@@ -30,6 +32,13 @@ class StatusViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    val statusesWithEffects: StateFlow<List<StatusWithEffects>> = statusRepository.allStatusesWithEffects
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     val attributes: StateFlow<List<AttributeWithRanks>> = attributeRepository.allAttributesWithRanks
         .stateIn(
             scope = viewModelScope,
@@ -37,7 +46,7 @@ class StatusViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    val enabledPeriodicStatuses: StateFlow<List<StatusEntity>> = statusRepository.enabledPeriodicStatuses
+    val enabledPeriodicEffects: StateFlow<List<StatusEffectEntity>> = statusRepository.enabledPeriodicEffects
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -48,12 +57,7 @@ class StatusViewModel @Inject constructor(
         name: String,
         description: String,
         colorHex: String,
-        effectType: Int,
-        targetAttributeId: Long,
-        periodValue: Int,
-        periodUnit: Int,
-        changeValue: Float,
-        bonusPercent: Float,
+        effects: List<StatusEffectEntity>,
         durationValue: Int = 0,
         durationUnit: Int = 0
     ) {
@@ -63,28 +67,30 @@ class StatusViewModel @Inject constructor(
                 description = description,
                 colorHex = colorHex,
                 isEnabled = false,
-                effectType = effectType,
-                targetAttributeId = targetAttributeId,
-                periodValue = periodValue,
-                periodUnit = periodUnit,
-                changeValue = changeValue,
-                bonusPercent = bonusPercent,
                 durationValue = durationValue,
                 durationUnit = durationUnit
             )
-            statusRepository.insertStatus(status)
+            statusRepository.insertStatusWithEffects(status, effects)
+            
+            val effectTypes = effects.map { 
+                when (it.effectType) {
+                    0 -> "周期性变动"
+                    1 -> "属性加成"
+                    else -> "属性衰减"
+                }
+            }.distinct().joinToString(", ")
             
             logRepository.insertLog(
                 type = "STATUS_CREATED",
                 title = "创建状态: $name",
-                details = if (effectType == 0) "周期性变动" else if (effectType == 1) "属性加成" else "属性衰减"
+                details = effectTypes
             )
         }
     }
 
-    fun updateStatus(status: StatusEntity) {
+    fun updateStatus(status: StatusEntity, effects: List<StatusEffectEntity>) {
         viewModelScope.launch {
-            statusRepository.updateStatus(status)
+            statusRepository.updateStatusWithEffects(status, effects)
         }
     }
 
@@ -93,8 +99,7 @@ class StatusViewModel @Inject constructor(
             val updatedStatus = if (enabled) {
                 status.copy(
                     isEnabled = true,
-                    startTime = System.currentTimeMillis(),
-                    lastTriggerTime = 0L
+                    startTime = System.currentTimeMillis()
                 )
             } else {
                 status.copy(isEnabled = false)
@@ -103,7 +108,7 @@ class StatusViewModel @Inject constructor(
             
             logRepository.insertLog(
                 type = "STATUS_TOGGLED",
-                title = if (enabled) "开启状态: ${status.name}" else "关闭状态: ${status.name}",
+                title = if (enabled) "进入状态: ${status.name}" else "退出状态: ${status.name}",
                 details = ""
             )
         }
@@ -127,44 +132,50 @@ class StatusViewModel @Inject constructor(
         }
     }
 
-    fun processPeriodicStatuses() {
+    fun processPeriodicEffects() {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
-            val enabledStatuses = statusRepository.enabledPeriodicStatuses.stateIn(viewModelScope).value
+            val enabledStatusesWithEffects = statusRepository.enabledStatusesWithEffects.stateIn(viewModelScope).value
             
-            for (status in enabledStatuses) {
+            for (statusWithEffects in enabledStatusesWithEffects) {
+                val status = statusWithEffects.status
+                
                 if (isStatusExpired(status)) {
                     autoDisableStatus(status)
                     continue
                 }
                 
-                val periodMillis = if (status.periodUnit == 0) {
-                    status.periodValue * 60 * 60 * 1000L
-                } else {
-                    status.periodValue * 24 * 60 * 60 * 1000L
-                }
-                
-                val lastTrigger = if (status.lastTriggerTime == 0L) status.startTime else status.lastTriggerTime
-                var nextTrigger = lastTrigger + periodMillis
-                
-                while (nextTrigger <= now) {
-                    val attr = attributeRepository.getAttributeById(status.targetAttributeId)
-                    if (attr != null) {
-                        val newValue = attr.currentValue + status.changeValue
-                        attributeRepository.updateAttribute(attr.copy(currentValue = newValue))
-                        
-                        logRepository.insertLog(
-                            type = "STATUS_TRIGGERED",
-                            title = "状态触发: ${status.name}",
-                            details = "${attr.name} ${if (status.changeValue >= 0) "+" else ""}${formatValue(status.changeValue)}"
-                        )
+                for (effect in statusWithEffects.effects) {
+                    if (effect.effectType != 0) continue
+                    
+                    val periodMillis = if (effect.periodUnit == 0) {
+                        effect.periodValue * 60 * 60 * 1000L
+                    } else {
+                        effect.periodValue * 24 * 60 * 60 * 1000L
                     }
                     
-                    nextTrigger += periodMillis
-                }
-                
-                if (nextTrigger > lastTrigger + periodMillis) {
-                    statusRepository.updateStatus(status.copy(lastTriggerTime = nextTrigger - periodMillis))
+                    val lastTrigger = if (effect.lastTriggerTime == 0L) status.startTime else effect.lastTriggerTime
+                    var nextTrigger = lastTrigger + periodMillis
+                    
+                    while (nextTrigger <= now) {
+                        val attr = attributeRepository.getAttributeById(effect.targetAttributeId)
+                        if (attr != null) {
+                            val newValue = attr.currentValue + effect.changeValue
+                            attributeRepository.updateAttribute(attr.copy(currentValue = newValue))
+                            
+                            logRepository.insertLog(
+                                type = "STATUS_TRIGGERED",
+                                title = "状态触发: ${status.name}",
+                                details = "${attr.name} ${if (effect.changeValue >= 0) "+" else ""}${formatValue(effect.changeValue)}"
+                            )
+                        }
+                        
+                        nextTrigger += periodMillis
+                    }
+                    
+                    if (nextTrigger > lastTrigger + periodMillis) {
+                        statusRepository.updateEffect(effect.copy(lastTriggerTime = nextTrigger - periodMillis))
+                    }
                 }
             }
         }
@@ -209,22 +220,24 @@ class StatusViewModel @Inject constructor(
     suspend fun calculateFinalChangeForAttribute(attributeId: Long, baseChange: Float): Float {
         if (baseChange <= 0f) return baseChange
         
-        val bonusStatuses = statusRepository.getEnabledBonusStatusesForAttribute(attributeId)
+        val bonusEffects = statusRepository.getEnabledBonusEffectsForAttribute(attributeId)
             .stateIn(viewModelScope).value
-        val decayStatuses = statusRepository.getEnabledDecayStatusesForAttribute(attributeId)
+        val decayEffects = statusRepository.getEnabledDecayEffectsForAttribute(attributeId)
             .stateIn(viewModelScope).value
         
         var totalBonus = 0f
-        for (status in bonusStatuses) {
-            if (!isStatusExpired(status)) {
-                totalBonus += status.bonusPercent
+        for (effect in bonusEffects) {
+            val status = statusRepository.getStatusById(effect.statusId)
+            if (status != null && !isStatusExpired(status)) {
+                totalBonus += effect.bonusPercent
             }
         }
         
         var totalDecay = 0f
-        for (status in decayStatuses) {
-            if (!isStatusExpired(status)) {
-                totalDecay += status.bonusPercent
+        for (effect in decayEffects) {
+            val status = statusRepository.getStatusById(effect.statusId)
+            if (status != null && !isStatusExpired(status)) {
+                totalDecay += effect.bonusPercent
             }
         }
         
@@ -234,6 +247,14 @@ class StatusViewModel @Inject constructor(
         val afterDecay = afterBonus * (1 - totalDecay / 100f)
         
         return afterDecay
+    }
+
+    suspend fun getStatusWithEffects(statusId: Long): StatusWithEffects? {
+        return statusRepository.getStatusWithEffectsById(statusId)
+    }
+
+    suspend fun getEffectsForStatus(statusId: Long): List<StatusEffectEntity> {
+        return statusRepository.getEffectsForStatusSync(statusId)
     }
 
     private fun formatValue(value: Float): String {

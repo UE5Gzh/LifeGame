@@ -18,6 +18,7 @@ import com.example.lifegame.data.entity.QuestEffectEntity
 import com.example.lifegame.data.entity.QuestEntity
 import com.example.lifegame.data.entity.RankEntity
 import com.example.lifegame.data.entity.StatusEntity
+import com.example.lifegame.data.entity.StatusEffectEntity
 
 import com.example.lifegame.data.dao.LogDao
 import com.example.lifegame.data.entity.LogEntity
@@ -34,9 +35,10 @@ import com.example.lifegame.data.entity.LogEntity
         QuestBehaviorGoalEntity::class,
         QuestEffectEntity::class,
         LogEntity::class,
-        StatusEntity::class
+        StatusEntity::class,
+        StatusEffectEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

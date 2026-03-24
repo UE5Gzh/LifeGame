@@ -147,22 +147,24 @@ class QuestViewModel @Inject constructor(
     private suspend fun calculateFinalChangeForAttribute(attributeId: Long, baseChange: Float): Float {
         if (baseChange <= 0f) return baseChange
         
-        val bonusStatuses = statusRepository.getEnabledBonusStatusesForAttribute(attributeId).first()
-        val decayStatuses = statusRepository.getEnabledDecayStatusesForAttribute(attributeId).first()
+        val bonusEffects = statusRepository.getEnabledBonusEffectsForAttribute(attributeId).first()
+        val decayEffects = statusRepository.getEnabledDecayEffectsForAttribute(attributeId).first()
         
         val now = System.currentTimeMillis()
         
         var totalBonus = 0f
-        for (status in bonusStatuses) {
-            if (!isStatusExpired(status, now)) {
-                totalBonus += status.bonusPercent
+        for (effect in bonusEffects) {
+            val status = statusRepository.getStatusById(effect.statusId)
+            if (status != null && !isStatusExpired(status, now)) {
+                totalBonus += effect.bonusPercent
             }
         }
         
         var totalDecay = 0f
-        for (status in decayStatuses) {
-            if (!isStatusExpired(status, now)) {
-                totalDecay += status.bonusPercent
+        for (effect in decayEffects) {
+            val status = statusRepository.getStatusById(effect.statusId)
+            if (status != null && !isStatusExpired(status, now)) {
+                totalDecay += effect.bonusPercent
             }
         }
         

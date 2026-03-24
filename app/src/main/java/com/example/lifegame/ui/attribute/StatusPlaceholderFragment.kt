@@ -46,12 +46,12 @@ class StatusPlaceholderFragment : BaseFragment<FragmentStatusPlaceholderBinding>
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.statuses.collect { statuses ->
+                    viewModel.statusesWithEffects.collect { statusesWithEffects ->
                         if (::adapter.isInitialized) {
                             adapter.updateAttributes(viewModel.attributes.value)
-                            adapter.submitList(statuses)
+                            adapter.submitList(statusesWithEffects)
                         }
-                        binding.tvEmpty.visibility = if (statuses.isEmpty()) View.VISIBLE else View.GONE
+                        binding.tvEmpty.visibility = if (statusesWithEffects.isEmpty()) View.VISIBLE else View.GONE
                     }
                 }
                 
@@ -118,8 +118,7 @@ class StatusPlaceholderFragment : BaseFragment<FragmentStatusPlaceholderBinding>
     }
 
     private fun saveSortOrder() {
-        val currentList = adapter.currentList
-        val updatedStatuses = currentList.mapIndexed { index, status ->
+        val updatedStatuses = adapter.getStatusesInOrder().mapIndexed { index, status ->
             status.copy(sortOrder = index)
         }
         viewModel.updateStatusSortOrders(updatedStatuses)

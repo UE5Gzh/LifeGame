@@ -9,11 +9,10 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.data.entity.StatusEntity
+import com.example.lifegame.data.entity.StatusEffectEntity
+import com.example.lifegame.data.entity.StatusWithEffects
 import com.example.lifegame.databinding.ItemStatusBinding
 import java.util.Collections
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlin.math.roundToInt
 
 class StatusAdapter(
@@ -21,7 +20,7 @@ class StatusAdapter(
     private val onStatusToggle: (StatusEntity, Boolean) -> Unit,
     private val onItemClick: (StatusEntity) -> Unit,
     private val onItemLongClick: (StatusEntity) -> Unit
-) : ListAdapter<StatusEntity, StatusAdapter.StatusViewHolder>(StatusDiffCallback()) {
+) : ListAdapter<StatusWithEffects, StatusAdapter.StatusViewHolder>(StatusDiffCallback()) {
 
     var isSortMode = false
         set(value) {
@@ -40,6 +39,10 @@ class StatusAdapter(
         submitList(currentList)
     }
 
+    fun getStatusesInOrder(): List<StatusEntity> {
+        return currentList.map { it.status }
+    }
+
     private fun formatValue(value: Float): String {
         return if (value == value.roundToInt().toFloat()) {
             value.roundToInt().toString()
@@ -51,7 +54,10 @@ class StatusAdapter(
     inner class StatusViewHolder(private val binding: ItemStatusBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(status: StatusEntity) {
+        fun bind(statusWithEffects: StatusWithEffects) {
+            val status = statusWithEffects.status
+            val effects = statusWithEffects.effects
+            
             binding.tvName.text = status.name
             
             if (status.description.isNotEmpty()) {
@@ -61,44 +67,14 @@ class StatusAdapter(
                 binding.tvDescription.visibility = View.GONE
             }
 
-            val attrName = attributes.find { it.attribute.id == status.targetAttributeId }?.attribute?.name ?: "未知属性"
-            
-            if (status.effectType == 0) {
-                val unitStr = if (status.periodUnit == 0) "小时" else "天"
-                val sign = if (status.changeValue >= 0) "+" else ""
-                binding.tvEffectInfo.text = "效果: $attrName $sign${formatValue(status.changeValue)}/$unitStr"
-                
-                if (status.isEnabled) {
-                    binding.tvNextTrigger.visibility = View.VISIBLE
-                    val nextTrigger = calculateNextTriggerTime(status)
-                    val sdf = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
-                    val nextTriggerText = "下次触发: ${sdf.format(Date(nextTrigger))}"
-                    
-                    if (status.durationValue > 0) {
-                        val remainingText = calculateRemainingTime(status)
-                        binding.tvNextTrigger.text = "$nextTriggerText | $remainingText"
-                    } else {
-                        binding.tvNextTrigger.text = nextTriggerText
-                    }
-                } else {
-                    binding.tvNextTrigger.visibility = View.GONE
-                }
-            } else if (status.effectType == 1) {
-                binding.tvEffectInfo.text = "加成: 获取$attrName +${formatValue(status.bonusPercent)}%"
-                if (status.isEnabled && status.durationValue > 0) {
-                    binding.tvNextTrigger.visibility = View.VISIBLE
-                    binding.tvNextTrigger.text = calculateRemainingTime(status)
-                } else {
-                    binding.tvNextTrigger.visibility = View.GONE
-                }
+            val effectInfoText = buildEffectInfoText(effects)
+            binding.tvEffectInfo.text = effectInfoText
+
+            if (status.isEnabled && status.durationValue > 0) {
+                binding.tvNextTrigger.visibility = View.VISIBLE
+                binding.tvNextTrigger.text = calculateRemainingTime(status)
             } else {
-                binding.tvEffectInfo.text = "衰减: 获取$attrName -${formatValue(status.bonusPercent)}%"
-                if (status.isEnabled && status.durationValue > 0) {
-                    binding.tvNextTrigger.visibility = View.VISIBLE
-                    binding.tvNextTrigger.text = calculateRemainingTime(status)
-                } else {
-                    binding.tvNextTrigger.visibility = View.GONE
-                }
+                binding.tvNextTrigger.visibility = View.GONE
             }
 
             try {
@@ -133,22 +109,23 @@ class StatusAdapter(
             }
         }
 
-        private fun calculateNextTriggerTime(status: StatusEntity): Long {
-            val periodMillis = if (status.periodUnit == 0) {
-                status.periodValue * 60 * 60 * 1000L
-            } else {
-                status.periodValue * 24 * 60 * 60 * 1000L
-            }
+        private fun buildEffectInfoText(effects: List<StatusEffectEntity>): String {
+            if (effects.isEmpty()) return "无效果"
             
-            val lastTrigger = if (status.lastTriggerTime == 0L) status.startTime else status.lastTriggerTime
-            var nextTrigger = lastTrigger + periodMillis
-            
-            val now = System.currentTimeMillis()
-            while (nextTrigger <= now) {
-                nextTrigger += periodMillis
-            }
-            
-            return nextTrigger
+            return effects.mapIndexed { index, effect ->
+                val attrName = attributes.find { it.attribute.id == effect.targetAttributeId }?.attribute?.name ?: "未知属性"
+                val prefix = if (effects.size > 1) "${index + 1}. " else ""
+                
+                when (effect.effectType) {
+                    0 -> {
+                        val unitStr = if (effect.periodUnit == 0) "小时" else "天"
+                        val sign = if (effect.changeValue >= 0) "+" else ""
+                        "$prefix$attrName $sign${formatValue(effect.changeValue)}/$unitStr"
+                    }
+                    1 -> "${prefix}获取$attrName +${formatValue(effect.bonusPercent)}%"
+                    else -> "${prefix}获取$attrName -${formatValue(effect.bonusPercent)}%"
+                }
+            }.joinToString("\n")
         }
 
         private fun calculateRemainingTime(status: StatusEntity): String {
@@ -192,12 +169,12 @@ class StatusAdapter(
     }
 }
 
-class StatusDiffCallback : DiffUtil.ItemCallback<StatusEntity>() {
-    override fun areItemsTheSame(oldItem: StatusEntity, newItem: StatusEntity): Boolean {
-        return oldItem.id == newItem.id
+class StatusDiffCallback : DiffUtil.ItemCallback<StatusWithEffects>() {
+    override fun areItemsTheSame(oldItem: StatusWithEffects, newItem: StatusWithEffects): Boolean {
+        return oldItem.status.id == newItem.status.id
     }
 
-    override fun areContentsTheSame(oldItem: StatusEntity, newItem: StatusEntity): Boolean {
+    override fun areContentsTheSame(oldItem: StatusWithEffects, newItem: StatusWithEffects): Boolean {
         return oldItem == newItem
     }
 }

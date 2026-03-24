@@ -11,10 +11,12 @@ import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.example.lifegame.R
 import com.example.lifegame.data.entity.StatusEntity
-import com.example.lifegame.databinding.DialogAddStatusBinding
+import com.example.lifegame.data.entity.StatusEffectEntity
+import com.example.lifegame.databinding.DialogAddStatusMultiEffectBinding
 import com.example.lifegame.databinding.FragmentAttributeBinding
 import com.example.lifegame.ui.base.BaseFragment
 import com.google.android.material.tabs.TabLayoutMediator
@@ -35,6 +37,7 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
     )
     private var selectedColorIndex = 0
     private var editingStatus: StatusEntity? = null
+    private var editingEffects: List<StatusEffectEntity>? = null
 
     private var attributeListFragment: AttributeListFragment? = null
     private var statusPlaceholderFragment: StatusPlaceholderFragment? = null
@@ -130,17 +133,36 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
 
     fun showAddStatusDialog(status: StatusEntity?) {
         editingStatus = status
-        val dialogBinding = DialogAddStatusBinding.inflate(LayoutInflater.from(requireContext()))
+        val dialogBinding = DialogAddStatusMultiEffectBinding.inflate(LayoutInflater.from(requireContext()))
         
         val dialog = AlertDialog.Builder(requireContext(), R.style.Theme_LifeGame_Dialog)
             .setView(dialogBinding.root)
             .create()
         
+        var effectsAdapter: StatusEffectAdapter? = null
+        effectsAdapter = StatusEffectAdapter(emptyList()) { position ->
+            effectsAdapter?.removeEffect(position)
+        }
+        dialogBinding.rvEffects.layoutManager = LinearLayoutManager(requireContext())
+        dialogBinding.rvEffects.adapter = effectsAdapter
+        
         setupColorPicker(dialogBinding)
-        setupAttributeSpinner(dialogBinding)
-        setupEffectTypeSwitcher(dialogBinding)
-        setupPeriodUnitSpinner(dialogBinding)
         setupDurationControls(dialogBinding)
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            statusViewModel.attributes.collect { attributes ->
+                if (attributes.isNotEmpty()) {
+                    effectsAdapter.updateAttributes(attributes)
+                    
+                    if (status != null && editingEffects == null) {
+                        val existingEffects = statusViewModel.getEffectsForStatus(status.id)
+                        editingEffects = existingEffects
+                        val effectItems = existingEffects.map { EffectItem.fromStatusEffectEntity(it) }
+                        effectsAdapter.setEffects(effectItems)
+                    }
+                }
+            }
+        }
         
         if (status != null) {
             dialogBinding.tvDialogTitle.text = "编辑状态"
@@ -148,23 +170,6 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
             dialogBinding.etDescription.setText(status.description)
             selectedColorIndex = colorOptions.indexOf(status.colorHex).takeIf { it >= 0 } ?: 0
             updateColorSelection(dialogBinding)
-            
-            when (status.effectType) {
-                0 -> {
-                    dialogBinding.rbPeriodic.isChecked = true
-                    dialogBinding.etPeriodValue.setText(status.periodValue.toString())
-                    dialogBinding.spinnerPeriodUnit.setSelection(status.periodUnit)
-                    dialogBinding.etChangeValue.setText(status.changeValue.toString())
-                }
-                1 -> {
-                    dialogBinding.rbBonus.isChecked = true
-                    dialogBinding.etBonusPercent.setText(status.bonusPercent.toString())
-                }
-                2 -> {
-                    dialogBinding.rbDecay.isChecked = true
-                    dialogBinding.etDecayPercent.setText(status.bonusPercent.toString())
-                }
-            }
             
             if (status.durationValue > 0) {
                 dialogBinding.cbHasDuration.isChecked = true
@@ -174,19 +179,60 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
             }
         }
         
-        dialogBinding.btnCancel.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnAddPeriodic.setOnClickListener {
+            val attributes = statusViewModel.attributes.value
+            val targetAttrId = attributes.firstOrNull()?.attribute?.id ?: 0L
+            effectsAdapter.addEffect(EffectItem(
+                effectType = 0,
+                targetAttributeId = targetAttrId,
+                periodValue = 1,
+                periodUnit = 0,
+                changeValue = 0f
+            ))
+        }
+        
+        dialogBinding.btnAddBonus.setOnClickListener {
+            val attributes = statusViewModel.attributes.value
+            val targetAttrId = attributes.firstOrNull()?.attribute?.id ?: 0L
+            effectsAdapter.addEffect(EffectItem(
+                effectType = 1,
+                targetAttributeId = targetAttrId,
+                bonusPercent = 10f
+            ))
+        }
+        
+        dialogBinding.btnAddDecay.setOnClickListener {
+            val attributes = statusViewModel.attributes.value
+            val targetAttrId = attributes.firstOrNull()?.attribute?.id ?: 0L
+            effectsAdapter.addEffect(EffectItem(
+                effectType = 2,
+                targetAttributeId = targetAttrId,
+                bonusPercent = 10f
+            ))
+        }
+        
+        dialogBinding.btnCancel.setOnClickListener { 
+            editingStatus = null
+            editingEffects = null
+            dialog.dismiss() 
+        }
         
         dialogBinding.btnConfirm.setOnClickListener {
-            if (validateInput(dialogBinding)) {
-                saveStatus(dialogBinding)
+            if (validateInput(dialogBinding, effectsAdapter)) {
+                saveStatus(dialogBinding, effectsAdapter)
                 dialog.dismiss()
             }
+        }
+        
+        dialog.setOnDismissListener {
+            editingStatus = null
+            editingEffects = null
         }
         
         dialog.show()
     }
 
-    private fun setupColorPicker(dialogBinding: DialogAddStatusBinding) {
+    private fun setupColorPicker(dialogBinding: DialogAddStatusMultiEffectBinding) {
         dialogBinding.rvColors.layoutManager = GridLayoutManager(requireContext(), 4)
         dialogBinding.rvColors.adapter = ColorPickerAdapter(colorOptions) { position ->
             selectedColorIndex = position
@@ -195,62 +241,13 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         updateColorSelection(dialogBinding)
     }
 
-    private fun updateColorSelection(dialogBinding: DialogAddStatusBinding) {
+    private fun updateColorSelection(dialogBinding: DialogAddStatusMultiEffectBinding) {
         val adapter = dialogBinding.rvColors.adapter as? ColorPickerAdapter
         adapter?.selectedPosition = selectedColorIndex
         adapter?.notifyDataSetChanged()
     }
 
-    private fun setupAttributeSpinner(dialogBinding: DialogAddStatusBinding) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            statusViewModel.attributes.collect { attributes ->
-                if (attributes.isNotEmpty()) {
-                    val attrNames = attributes.map { it.attribute.name }
-                    val adapter = ArrayAdapter(requireContext(), R.layout.spinner_item_dark, attrNames)
-                    adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark)
-                    dialogBinding.spinnerAttribute.adapter = adapter
-                    
-                    editingStatus?.let { status ->
-                        val index = attributes.indexOfFirst { it.attribute.id == status.targetAttributeId }
-                        if (index >= 0) {
-                            dialogBinding.spinnerAttribute.setSelection(index)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun setupEffectTypeSwitcher(dialogBinding: DialogAddStatusBinding) {
-        dialogBinding.rgEffectType.setOnCheckedChangeListener { _, checkedId ->
-            when (checkedId) {
-                R.id.rb_periodic -> {
-                    dialogBinding.llPeriodicParams.visibility = View.VISIBLE
-                    dialogBinding.llBonusParams.visibility = View.GONE
-                    dialogBinding.llDecayParams.visibility = View.GONE
-                }
-                R.id.rb_bonus -> {
-                    dialogBinding.llPeriodicParams.visibility = View.GONE
-                    dialogBinding.llBonusParams.visibility = View.VISIBLE
-                    dialogBinding.llDecayParams.visibility = View.GONE
-                }
-                R.id.rb_decay -> {
-                    dialogBinding.llPeriodicParams.visibility = View.GONE
-                    dialogBinding.llBonusParams.visibility = View.GONE
-                    dialogBinding.llDecayParams.visibility = View.VISIBLE
-                }
-            }
-        }
-    }
-
-    private fun setupPeriodUnitSpinner(dialogBinding: DialogAddStatusBinding) {
-        val units = arrayOf("小时", "天")
-        val adapter = ArrayAdapter(requireContext(), R.layout.spinner_item_dark, units)
-        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark)
-        dialogBinding.spinnerPeriodUnit.adapter = adapter
-    }
-
-    private fun setupDurationControls(dialogBinding: DialogAddStatusBinding) {
+    private fun setupDurationControls(dialogBinding: DialogAddStatusMultiEffectBinding) {
         val units = arrayOf("分钟", "小时", "天")
         val adapter = ArrayAdapter(requireContext(), R.layout.spinner_item_dark, units)
         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark)
@@ -261,45 +258,44 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         }
     }
 
-    private fun validateInput(dialogBinding: DialogAddStatusBinding): Boolean {
+    private fun validateInput(
+        dialogBinding: DialogAddStatusMultiEffectBinding,
+        effectsAdapter: StatusEffectAdapter
+    ): Boolean {
         val name = dialogBinding.etName.text.toString().trim()
         if (name.isEmpty()) {
             Toast.makeText(requireContext(), "请输入状态名称", Toast.LENGTH_SHORT).show()
             return false
         }
         
-        val attributes = statusViewModel.attributes.value
-        if (attributes.isEmpty()) {
-            Toast.makeText(requireContext(), "请先创建属性", Toast.LENGTH_SHORT).show()
+        val effects = effectsAdapter.getEffects()
+        if (effects.isEmpty()) {
+            Toast.makeText(requireContext(), "请至少添加一个效果", Toast.LENGTH_SHORT).show()
             return false
         }
         
-        when {
-            dialogBinding.rbPeriodic.isChecked -> {
-                val periodValue = dialogBinding.etPeriodValue.text.toString().trim()
-                if (periodValue.isEmpty() || periodValue.toIntOrNull()?.let { it <= 0 } != false) {
-                    Toast.makeText(requireContext(), "请输入有效的周期值", Toast.LENGTH_SHORT).show()
-                    return false
+        for ((index, effect) in effects.withIndex()) {
+            val attributes = statusViewModel.attributes.value
+            val attrName = attributes.find { it.attribute.id == effect.targetAttributeId }?.attribute?.name ?: "未知属性"
+            
+            when (effect.effectType) {
+                0 -> {
+                    if (effect.periodValue <= 0) {
+                        Toast.makeText(requireContext(), "效果${index + 1}: 请输入有效的周期值", Toast.LENGTH_SHORT).show()
+                        return false
+                    }
                 }
-                
-                val changeValue = dialogBinding.etChangeValue.text.toString().trim()
-                if (changeValue.isEmpty() || changeValue.toFloatOrNull() == null) {
-                    Toast.makeText(requireContext(), "请输入有效的变动值", Toast.LENGTH_SHORT).show()
-                    return false
+                1 -> {
+                    if (effect.bonusPercent < 0 || effect.bonusPercent > 100) {
+                        Toast.makeText(requireContext(), "效果${index + 1}: 加成百分比需在0-100之间", Toast.LENGTH_SHORT).show()
+                        return false
+                    }
                 }
-            }
-            dialogBinding.rbBonus.isChecked -> {
-                val bonusPercent = dialogBinding.etBonusPercent.text.toString().trim()
-                if (bonusPercent.isEmpty() || bonusPercent.toFloatOrNull()?.let { it < 0 || it > 100 } != false) {
-                    Toast.makeText(requireContext(), "请输入0-100之间的加成百分比", Toast.LENGTH_SHORT).show()
-                    return false
-                }
-            }
-            dialogBinding.rbDecay.isChecked -> {
-                val decayPercent = dialogBinding.etDecayPercent.text.toString().trim()
-                if (decayPercent.isEmpty() || decayPercent.toFloatOrNull()?.let { it < 0 || it > 100 } != false) {
-                    Toast.makeText(requireContext(), "请输入0-100之间的衰减百分比", Toast.LENGTH_SHORT).show()
-                    return false
+                else -> {
+                    if (effect.bonusPercent < 0 || effect.bonusPercent > 100) {
+                        Toast.makeText(requireContext(), "效果${index + 1}: 衰减百分比需在0-100之间", Toast.LENGTH_SHORT).show()
+                        return false
+                    }
                 }
             }
         }
@@ -315,45 +311,17 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         return true
     }
 
-    private fun saveStatus(dialogBinding: DialogAddStatusBinding) {
+    private fun saveStatus(
+        dialogBinding: DialogAddStatusMultiEffectBinding,
+        effectsAdapter: StatusEffectAdapter
+    ) {
         val name = dialogBinding.etName.text.toString().trim()
         val description = dialogBinding.etDescription.text.toString().trim()
         val colorHex = colorOptions[selectedColorIndex]
         
-        val effectType = when {
-            dialogBinding.rbPeriodic.isChecked -> 0
-            dialogBinding.rbBonus.isChecked -> 1
-            else -> 2
-        }
-        
-        val attributes = statusViewModel.attributes.value
-        val selectedAttrIndex = dialogBinding.spinnerAttribute.selectedItemPosition
-        val targetAttributeId = attributes[selectedAttrIndex].attribute.id
-        
-        val periodValue: Int
-        val periodUnit: Int
-        val changeValue: Float
-        val bonusPercent: Float
-        
-        when (effectType) {
-            0 -> {
-                periodValue = dialogBinding.etPeriodValue.text.toString().toInt()
-                periodUnit = dialogBinding.spinnerPeriodUnit.selectedItemPosition
-                changeValue = dialogBinding.etChangeValue.text.toString().toFloat()
-                bonusPercent = 0f
-            }
-            1 -> {
-                periodValue = 0
-                periodUnit = 0
-                changeValue = 0f
-                bonusPercent = dialogBinding.etBonusPercent.text.toString().toFloat()
-            }
-            else -> {
-                periodValue = 0
-                periodUnit = 0
-                changeValue = 0f
-                bonusPercent = dialogBinding.etDecayPercent.text.toString().toFloat()
-            }
+        val effectItems = effectsAdapter.getEffects()
+        val effects = effectItems.mapIndexed { index, item ->
+            item.toStatusEffectEntity(0L, index)
         }
         
         val durationValue: Int
@@ -371,28 +339,17 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
                 name = name,
                 description = description,
                 colorHex = colorHex,
-                effectType = effectType,
-                targetAttributeId = targetAttributeId,
-                periodValue = periodValue,
-                periodUnit = periodUnit,
-                changeValue = changeValue,
-                bonusPercent = bonusPercent,
                 durationValue = durationValue,
                 durationUnit = durationUnit
             )
-            statusViewModel.updateStatus(updatedStatus)
+            statusViewModel.updateStatus(updatedStatus, effects)
             Toast.makeText(requireContext(), "状态已更新", Toast.LENGTH_SHORT).show()
         } else {
             statusViewModel.addStatus(
                 name = name,
                 description = description,
                 colorHex = colorHex,
-                effectType = effectType,
-                targetAttributeId = targetAttributeId,
-                periodValue = periodValue,
-                periodUnit = periodUnit,
-                changeValue = changeValue,
-                bonusPercent = bonusPercent,
+                effects = effects,
                 durationValue = durationValue,
                 durationUnit = durationUnit
             )
@@ -400,5 +357,6 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         }
         
         editingStatus = null
+        editingEffects = null
     }
 }
