@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -156,7 +155,6 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
         adapter.isSortMode = isSortMode
         if (isSortMode) {
             itemTouchHelper?.attachToRecyclerView(binding.rvAttributes)
-            Toast.makeText(requireContext(), "进入排序模式", Toast.LENGTH_SHORT).show()
         } else {
             itemTouchHelper?.attachToRecyclerView(null)
             saveSortOrder()
@@ -169,7 +167,6 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
             attributeWithRanks.attribute.copy(sortOrder = index)
         }
         viewModel.updateAttributeSortOrders(updatedAttributes)
-        Toast.makeText(requireContext(), "排序已保存", Toast.LENGTH_SHORT).show()
     }
 
     private fun showAddAttributeDialog() {
@@ -192,7 +189,6 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
             val initialValueStr = dialogBinding.etInitialValue.text?.toString()?.trim()
 
             if (name.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "请输入属性名称", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -253,7 +249,6 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
             .setMessage("确定要删除属性「${attributeWithRanks.attribute.name}」吗？\n删除后相关数据将无法恢复。")
             .setPositiveButton("删除") { _, _ ->
                 viewModel.checkAndDeleteAttribute(attributeWithRanks.attribute) { success, message ->
-                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("取消", null)

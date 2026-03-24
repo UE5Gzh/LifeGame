@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -90,7 +89,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             questWithDetails.quest.copy(sortOrder = index)
         }
         viewModel.updateQuestSortOrders(updatedQuests)
-        Toast.makeText(requireContext(), "排序已保存", Toast.LENGTH_SHORT).show()
     }
 
     private fun setupRecyclerView() {
@@ -236,17 +234,14 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                     .setMessage("恭喜完成任务「${quest.name}」！是否立即领取奖励？")
                     .setPositiveButton("领取") { _, _ ->
                         viewModel.claimReward(questWithDetails)
-                        Toast.makeText(requireContext(), "奖励已领取！", Toast.LENGTH_SHORT).show()
                     }
                     .setNegativeButton("取消", null)
                     .show()
             }
             2 -> {
-                Toast.makeText(requireContext(), "任务已完成并领取奖励", Toast.LENGTH_SHORT).show()
                 showQuestDetailsDialog(questWithDetails)
             }
             3 -> {
-                Toast.makeText(requireContext(), "任务已失败", Toast.LENGTH_SHORT).show()
                 showQuestDetailsDialog(questWithDetails)
             }
         }
@@ -279,7 +274,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                             .setMessage("确定要彻底删除该任务吗？该操作不可恢复。")
                             .setPositiveButton("删除") { _, _ ->
                                 viewModel.deleteQuest(quest)
-                                Toast.makeText(requireContext(), "任务已删除", Toast.LENGTH_SHORT).show()
                             }
                             .setNegativeButton("取消", null)
                             .show()
@@ -290,7 +284,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                             .setMessage("放弃任务将触发该任务的惩罚（如果有），确定放弃吗？")
                             .setPositiveButton("放弃") { _, _ ->
                                 viewModel.giveUpQuest(questWithDetails)
-                                Toast.makeText(requireContext(), "任务已放弃", Toast.LENGTH_SHORT).show()
                             }
                             .setNegativeButton("取消", null)
                             .show()
@@ -315,7 +308,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             .setMessage("确认立即完成任务「${questWithDetails.quest.name}」吗？\n\n注意：这将跳过目标达成过程，直接获得奖励。\n任务惩罚将不会被触发。")
             .setPositiveButton("确认完成") { _, _ ->
                 viewModel.instantCompleteQuest(questWithDetails)
-                Toast.makeText(requireContext(), "任务已立即完成！", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("取消", null)
             .show()
@@ -414,7 +406,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         dialogBinding.btnAddAttrGoal.setOnClickListener {
             if (availableAttributes.isEmpty()) {
-                Toast.makeText(requireContext(), "请先创建属性", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             val rowBinding = ItemQuestAttrGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
@@ -427,7 +418,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         dialogBinding.btnAddBehGoal.setOnClickListener {
             if (availableBehaviors.isEmpty()) {
-                Toast.makeText(requireContext(), "请先创建行动", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             val rowBinding = ItemQuestBehGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
@@ -476,7 +466,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         dialogBinding.btnConfirm.setOnClickListener {
             val name = dialogBinding.etName.text?.toString()?.trim()
             if (name.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "请输入任务名称", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -488,7 +477,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             }
 
             if (type != 0 && type != 3 && selectedDeadline == null) {
-                Toast.makeText(requireContext(), "请选择截止日期", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -515,7 +503,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             }
 
             if (attrGoals.isEmpty() && behGoals.isEmpty()) {
-                Toast.makeText(requireContext(), "请至少添加一个完成目标", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -688,7 +675,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         dialogBinding.btnAddAttrGoal.setOnClickListener {
             if (availableAttributes.isEmpty()) {
-                Toast.makeText(requireContext(), "请先创建属性", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             val rowBinding = ItemQuestAttrGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
@@ -701,7 +687,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         dialogBinding.btnAddBehGoal.setOnClickListener {
             if (availableBehaviors.isEmpty()) {
-                Toast.makeText(requireContext(), "请先创建行动", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             val rowBinding = ItemQuestBehGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
@@ -720,7 +705,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         dialogBinding.btnConfirm.setOnClickListener {
             val name = dialogBinding.etName.text?.toString()?.trim()
             if (name.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "请输入任务名称", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -732,7 +716,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             }
 
             if (type != 0 && type != 3 && selectedDeadline == null) {
-                Toast.makeText(requireContext(), "请选择截止日期", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -759,7 +742,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             }
 
             if (attrGoals.isEmpty() && behGoals.isEmpty()) {
-                Toast.makeText(requireContext(), "请至少添加一个完成目标", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -797,7 +779,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             )
             
             viewModel.updateQuestWithDetails(updatedQuest, attrGoals, behGoals, effects)
-            Toast.makeText(requireContext(), "任务已更新", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
         }
 

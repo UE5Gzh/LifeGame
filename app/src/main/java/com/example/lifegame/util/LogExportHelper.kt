@@ -2,7 +2,6 @@ package com.example.lifegame.util
 
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.example.lifegame.data.entity.LogEntity
 import java.io.File
@@ -16,7 +15,6 @@ object LogExportHelper {
 
     fun exportLogsToCsv(context: Context, logs: List<LogEntity>): File? {
         if (logs.isEmpty()) {
-            Toast.makeText(context, "没有日志可导出", Toast.LENGTH_SHORT).show()
             return null
         }
 
@@ -50,7 +48,6 @@ object LogExportHelper {
             return file
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(context, "导出失败: ${e.message}", Toast.LENGTH_SHORT).show()
             return null
         }
     }
@@ -83,7 +80,6 @@ object LogExportHelper {
             context.startActivity(chooserIntent)
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(context, "分享失败: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 }

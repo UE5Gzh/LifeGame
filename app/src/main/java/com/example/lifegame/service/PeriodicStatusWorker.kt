@@ -28,7 +28,7 @@ class PeriodicStatusWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         try {
             val now = System.currentTimeMillis()
-            val enabledStatusesWithEffects = statusRepository.enabledStatusesWithEffects.first()
+            val enabledStatusesWithEffects = statusRepository.getEnabledStatusesWithEffectsSync()
             
             for (statusWithEffects in enabledStatusesWithEffects) {
                 val status = statusWithEffects.status
@@ -47,7 +47,12 @@ class PeriodicStatusWorker @AssistedInject constructor(
             
             return Result.success()
         } catch (e: Exception) {
-            return Result.failure()
+            logRepository.insertLog(
+                type = "WORKER_ERROR",
+                title = "周期性状态Worker异常",
+                details = e.message ?: "Unknown error"
+            )
+            return Result.retry()
         }
     }
 
@@ -123,12 +128,12 @@ class PeriodicStatusWorker @AssistedInject constructor(
         
         fun schedule(context: Context) {
             val workRequest = PeriodicWorkRequestBuilder<PeriodicStatusWorker>(
-                1, TimeUnit.MINUTES
+                15, TimeUnit.MINUTES
             ).build()
             
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 workRequest
             )
         }

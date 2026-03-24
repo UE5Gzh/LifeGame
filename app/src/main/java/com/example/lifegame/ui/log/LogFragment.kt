@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.EditText
-import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -106,9 +105,6 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
                 val content = editText.text.toString().trim()
                 if (content.isNotEmpty()) {
                     viewModel.insertCustomLog(content)
-                    Toast.makeText(requireContext(), "日志已保存并锁定", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(requireContext(), "内容不能为空", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("取消", null)
@@ -148,8 +144,6 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
             }
             smoothScroller.targetPosition = targetPosition
             binding.rvLogs.layoutManager?.startSmoothScroll(smoothScroller)
-        } else {
-            Toast.makeText(requireContext(), "该日期无日志记录", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -175,7 +169,6 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
     private fun exportLogs() {
         val logs = logAdapter.currentList
         if (logs.isEmpty()) {
-            Toast.makeText(requireContext(), "没有日志可导出", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -213,9 +206,6 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
                 
                 if (limit != null && limit in 50..20000) {
                     viewModel.setMaxLogLimit(limit)
-                    Toast.makeText(requireContext(), "已更新最大日志数量为 $limit", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(requireContext(), "请输入50到20000之间的数字", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("取消", null)
@@ -248,7 +238,6 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
                 viewModel.setDefaultLockForQuestType(1, cbMain.isChecked)
                 viewModel.setDefaultLockForQuestType(2, cbSide.isChecked)
                 viewModel.setDefaultLockForQuestType(3, cbWeekly.isChecked)
-                Toast.makeText(requireContext(), "设置已保存", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("取消", null)
             .show()

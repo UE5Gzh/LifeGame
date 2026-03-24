@@ -64,7 +64,7 @@ class MainActivity : AppCompatActivity() {
     
     private fun observeCelebrations() {
         lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
                 CelebrationBus.events.collect { event ->
                     celebrationManager?.showCelebration(event)
                 }

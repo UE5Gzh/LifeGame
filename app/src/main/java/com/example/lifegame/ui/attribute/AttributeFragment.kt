@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -264,13 +263,11 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
     ): Boolean {
         val name = dialogBinding.etName.text.toString().trim()
         if (name.isEmpty()) {
-            Toast.makeText(requireContext(), "请输入状态名称", Toast.LENGTH_SHORT).show()
             return false
         }
         
         val effects = effectsAdapter.getEffects()
         if (effects.isEmpty()) {
-            Toast.makeText(requireContext(), "请至少添加一个效果", Toast.LENGTH_SHORT).show()
             return false
         }
         
@@ -281,19 +278,16 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
             when (effect.effectType) {
                 0 -> {
                     if (effect.periodValue <= 0) {
-                        Toast.makeText(requireContext(), "效果${index + 1}: 请输入有效的周期值", Toast.LENGTH_SHORT).show()
                         return false
                     }
                 }
                 1 -> {
                     if (effect.bonusPercent < 0 || effect.bonusPercent > 100) {
-                        Toast.makeText(requireContext(), "效果${index + 1}: 加成百分比需在0-100之间", Toast.LENGTH_SHORT).show()
                         return false
                     }
                 }
                 else -> {
                     if (effect.bonusPercent < 0 || effect.bonusPercent > 100) {
-                        Toast.makeText(requireContext(), "效果${index + 1}: 衰减百分比需在0-100之间", Toast.LENGTH_SHORT).show()
                         return false
                     }
                 }
@@ -303,7 +297,6 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         if (dialogBinding.cbHasDuration.isChecked) {
             val durationValue = dialogBinding.etDurationValue.text.toString().trim()
             if (durationValue.isEmpty() || durationValue.toIntOrNull()?.let { it <= 0 } != false) {
-                Toast.makeText(requireContext(), "请输入有效的持续时间", Toast.LENGTH_SHORT).show()
                 return false
             }
         }
@@ -343,7 +336,6 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
                 durationUnit = durationUnit
             )
             statusViewModel.updateStatus(updatedStatus, effects)
-            Toast.makeText(requireContext(), "状态已更新", Toast.LENGTH_SHORT).show()
         } else {
             statusViewModel.addStatus(
                 name = name,
@@ -353,7 +345,6 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
                 durationValue = durationValue,
                 durationUnit = durationUnit
             )
-            Toast.makeText(requireContext(), "状态已创建", Toast.LENGTH_SHORT).show()
         }
         
         editingStatus = null

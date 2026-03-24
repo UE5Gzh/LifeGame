@@ -20,6 +20,8 @@ class StatusRepository @Inject constructor(
     
     val enabledStatusesWithEffects: Flow<List<StatusWithEffects>> = statusDao.getEnabledStatusesWithEffects()
     
+    suspend fun getEnabledStatusesWithEffectsSync(): List<StatusWithEffects> = statusDao.getEnabledStatusesWithEffectsSync()
+    
     val enabledPeriodicEffects: Flow<List<StatusEffectEntity>> = statusDao.getEnabledPeriodicEffects()
 
     fun getEnabledBonusEffectsForAttribute(attributeId: Long): Flow<List<StatusEffectEntity>> {

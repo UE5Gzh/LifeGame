@@ -3,7 +3,6 @@ package com.example.lifegame.ui.attribute.rank
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -92,7 +91,6 @@ class RankManagementFragment : BaseFragment<FragmentRankManagementBinding>() {
             val maxStr = dialogBinding.etMaxValue.text?.toString()?.trim()
 
             if (name.isNullOrEmpty() || minStr.isNullOrEmpty() || maxStr.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "请填写完整信息", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -100,7 +98,6 @@ class RankManagementFragment : BaseFragment<FragmentRankManagementBinding>() {
             val maxValue = maxStr.toFloatOrNull()
 
             if (minValue == null || maxValue == null || minValue > maxValue) {
-                Toast.makeText(requireContext(), "数值范围无效", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -112,7 +109,6 @@ class RankManagementFragment : BaseFragment<FragmentRankManagementBinding>() {
             }
 
             if (hasOverlap) {
-                Toast.makeText(requireContext(), "段位范围有重叠，请修改", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

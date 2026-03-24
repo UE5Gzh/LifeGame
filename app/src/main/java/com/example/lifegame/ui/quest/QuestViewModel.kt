@@ -146,6 +146,7 @@ class QuestViewModel @Inject constructor(
                     val progress = calculateProgress(q, currentAttributes)
                     if (progress >= 1f) {
                         questRepository.updateQuest(q.quest.copy(status = 1))
+                        com.example.lifegame.util.CelebrationBus.postQuestComplete(q.quest.name, q.quest.type)
                     }
                 }
             }

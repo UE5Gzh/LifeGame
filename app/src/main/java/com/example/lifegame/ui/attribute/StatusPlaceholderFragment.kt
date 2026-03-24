@@ -3,7 +3,6 @@ package com.example.lifegame.ui.attribute
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -110,7 +109,6 @@ class StatusPlaceholderFragment : BaseFragment<FragmentStatusPlaceholderBinding>
         adapter.isSortMode = isSortMode
         if (isSortMode) {
             itemTouchHelper?.attachToRecyclerView(binding.rvStatuses)
-            Toast.makeText(requireContext(), "进入排序模式", Toast.LENGTH_SHORT).show()
         } else {
             itemTouchHelper?.attachToRecyclerView(null)
             saveSortOrder()
@@ -122,7 +120,6 @@ class StatusPlaceholderFragment : BaseFragment<FragmentStatusPlaceholderBinding>
             status.copy(sortOrder = index)
         }
         viewModel.updateStatusSortOrders(updatedStatuses)
-        Toast.makeText(requireContext(), "排序已保存", Toast.LENGTH_SHORT).show()
     }
 
     private fun showEditStatusDialog(status: StatusEntity) {
@@ -135,7 +132,6 @@ class StatusPlaceholderFragment : BaseFragment<FragmentStatusPlaceholderBinding>
             .setMessage("确定要删除状态「${status.name}」吗？")
             .setPositiveButton("删除") { _, _ ->
                 viewModel.deleteStatus(status)
-                Toast.makeText(requireContext(), "状态已删除", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("取消", null)
             .show()

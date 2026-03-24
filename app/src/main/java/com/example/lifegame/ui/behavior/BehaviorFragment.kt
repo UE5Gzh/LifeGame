@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.EditText
-import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -50,7 +49,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                 val behavior = viewModel.behaviors.value.find { it.behavior.id == behaviorId }
                 if (behavior != null) {
                     viewModel.executeBehavior(behavior, isFocus = true)
-                    Toast.makeText(requireContext(), "专注完成！执行了: ${behavior.behavior.name}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -161,7 +159,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
 
         fun addAttributeRow(preSelectedAttributeId: Long? = null, preValueChange: Float = 1f) {
             if (availableAttributes.isEmpty()) {
-                Toast.makeText(requireContext(), "请先在个人属性中添加属性", Toast.LENGTH_SHORT).show()
                 return
             }
 
@@ -213,7 +210,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             val focusDurationStr = dialogBinding.etFocusDuration.text?.toString()?.trim()
 
             if (name.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "请输入行动名称", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -381,7 +377,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             behaviorWithModifiers.behavior.copy(sortOrder = index)
         }
         viewModel.updateBehaviorSortOrders(updatedBehaviors)
-        Toast.makeText(requireContext(), "排序已保存", Toast.LENGTH_SHORT).show()
     }
 
     private fun showSetMaxEnergyDialog() {
@@ -398,8 +393,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                 val newMax = editText.text.toString().toIntOrNull()
                 if (newMax != null && newMax > 0) {
                     viewModel.setMaxEnergy(newMax)
-                } else {
-                    Toast.makeText(requireContext(), "请输入有效的正整数", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("取消", null)
@@ -620,8 +613,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             if (!name.isNullOrEmpty()) {
                 viewModel.addGroup(name)
                 dialog.dismiss()
-            } else {
-                Toast.makeText(requireContext(), "请输入分组名称", Toast.LENGTH_SHORT).show()
             }
         }
         dialog.show()
@@ -645,8 +636,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             if (!name.isNullOrEmpty()) {
                 viewModel.updateGroup(group.copy(name = name))
                 dialog.dismiss()
-            } else {
-                Toast.makeText(requireContext(), "请输入分组名称", Toast.LENGTH_SHORT).show()
             }
         }
         dialog.show()
@@ -688,7 +677,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         // Helper to add an attribute modifier row
         fun addAttributeRow() {
             if (availableAttributes.isEmpty()) {
-                Toast.makeText(requireContext(), "请先在个人属性中添加属性", Toast.LENGTH_SHORT).show()
                 return
             }
 
@@ -731,7 +719,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             val focusDurationStr = dialogBinding.etFocusDuration.text?.toString()?.trim()
 
             if (name.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "请输入行动名称", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

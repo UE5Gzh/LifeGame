@@ -29,6 +29,10 @@ interface StatusDao {
     @Query("SELECT * FROM statuses WHERE isEnabled = 1")
     fun getEnabledStatusesWithEffects(): Flow<List<StatusWithEffects>>
 
+    @Transaction
+    @Query("SELECT * FROM statuses WHERE isEnabled = 1")
+    suspend fun getEnabledStatusesWithEffectsSync(): List<StatusWithEffects>
+
     @Query("SELECT * FROM status_effects WHERE statusId = :statusId ORDER BY sortOrder ASC")
     fun getEffectsForStatus(statusId: Long): Flow<List<StatusEffectEntity>>
 
