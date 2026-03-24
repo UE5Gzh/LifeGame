@@ -48,6 +48,8 @@
                 android:textColorHint="#999999"
                 app:boxStrokeColor="#666666"
                 app:hintTextColor="#CCCCCC"
+                app:errorEnabled="true"
+                app:errorTextColor="#FF6B6B"
                 app:layout_constraintTop_toBottomOf="@id/tv_section_basic">
 
                 <com.google.android.material.textfield.TextInputEditText

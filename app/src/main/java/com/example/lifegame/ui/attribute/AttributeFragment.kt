@@ -263,8 +263,10 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
     ): Boolean {
         val name = dialogBinding.etName.text.toString().trim()
         if (name.isEmpty()) {
+            dialogBinding.tilName.error = "请输入状态名称"
             return false
         }
+        dialogBinding.tilName.error = null
         
         val effects = effectsAdapter.getEffects()
         if (effects.isEmpty()) {

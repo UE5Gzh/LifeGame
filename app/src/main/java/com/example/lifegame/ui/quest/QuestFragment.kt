@@ -589,8 +589,10 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         dialogBinding.btnConfirm.setOnClickListener {
             val name = dialogBinding.etName.text?.toString()?.trim()
             if (name.isNullOrEmpty()) {
+                dialogBinding.tilName.error = "请输入任务名称"
                 return@setOnClickListener
             }
+            dialogBinding.tilName.error = null
 
             val type = when (dialogBinding.spinnerType.selectedItemPosition) {
                 0 -> 0

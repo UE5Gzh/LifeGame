@@ -178,7 +178,27 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
             }
             smoothScroller.targetPosition = targetPosition
             binding.rvLogs.layoutManager?.startSmoothScroll(smoothScroller)
+        } else {
+            showNoLogFoundDialog(targetDateStr)
         }
+    }
+
+    private fun showNoLogFoundDialog(dateStr: String) {
+        val dialogBinding = DialogConfirmBinding.inflate(LayoutInflater.from(requireContext()))
+        dialogBinding.tvTitle.text = "未找到日志"
+        dialogBinding.tvMessage.text = "在 $dateStr 没有找到任何日志记录"
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.visibility = View.GONE
+        dialogBinding.btnConfirm.text = "知道了"
+        dialogBinding.btnConfirm.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showSettingsDialog() {

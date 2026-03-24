@@ -33,6 +33,8 @@
             app:boxBackgroundMode="outline"
             app:boxStrokeColor="#404050"
             app:hintTextColor="#A0A0A0"
+            app:errorEnabled="true"
+            app:errorTextColor="#FF6B6B"
             app:layout_constraintTop_toBottomOf="@id/tv_dialog_title">
 
             <com.google.android.material.textfield.TextInputEditText

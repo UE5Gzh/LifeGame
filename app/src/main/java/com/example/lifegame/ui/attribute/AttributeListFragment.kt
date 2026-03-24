@@ -180,6 +180,14 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
         dialogBinding.rvColors.layoutManager = GridLayoutManager(requireContext(), 6)
         dialogBinding.rvColors.adapter = colorAdapter
 
+        dialogBinding.etName.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                dialogBinding.tilName.error = null
+            }
+        })
+
         dialogBinding.btnCancel.setOnClickListener {
             dialog.dismiss()
         }
@@ -189,6 +197,7 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
             val initialValueStr = dialogBinding.etInitialValue.text?.toString()?.trim()
 
             if (name.isNullOrEmpty()) {
+                dialogBinding.tilName.error = "请输入属性名称"
                 return@setOnClickListener
             }
 

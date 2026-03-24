@@ -207,13 +207,16 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
 
         dialogBinding.btnConfirm.setOnClickListener {
             val name = dialogBinding.etName.text?.toString()?.trim()
+            
+            if (name.isNullOrEmpty()) {
+                dialogBinding.tilName.error = "请输入行动名称"
+                return@setOnClickListener
+            }
+            dialogBinding.tilName.error = null
+            
             val energyType = if (dialogBinding.rbConsume.isChecked) 0 else 1
             val energyValueStr = dialogBinding.etEnergyValue.text?.toString()?.trim()
             val focusDurationStr = dialogBinding.etFocusDuration.text?.toString()?.trim()
-
-            if (name.isNullOrEmpty()) {
-                return@setOnClickListener
-            }
 
             val energyValue = energyValueStr?.toIntOrNull() ?: 10
             val focusDuration = focusDurationStr?.toIntOrNull() ?: 0
