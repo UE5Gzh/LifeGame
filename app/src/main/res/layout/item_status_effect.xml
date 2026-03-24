@@ -163,7 +163,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="衰减: "
+                android:text="削减: "
                 android:textColor="#A0A0A0"
                 android:textSize="12sp" />
 

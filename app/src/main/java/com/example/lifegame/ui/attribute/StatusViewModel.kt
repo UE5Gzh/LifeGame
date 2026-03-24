@@ -75,8 +75,8 @@ class StatusViewModel @Inject constructor(
             val effectTypes = effects.map { 
                 when (it.effectType) {
                     0 -> "周期性变动"
-                    1 -> "属性加成"
-                    else -> "属性衰减"
+                    1 -> "属性获取加成"
+                    else -> "属性获取减少"
                 }
             }.distinct().joinToString(", ")
             

@@ -121,14 +121,14 @@
                 android:id="@+id/rb_bonus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="属性加成"
+                android:text="属性获取加成"
                 android:textColor="@color/white" />
 
             <RadioButton
                 android:id="@+id/rb_decay"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="属性衰减"
+                android:text="属性获取减少"
                 android:textColor="@color/white" />
 
         </RadioGroup>
@@ -262,7 +262,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="衰减百分比"
+                android:text="削减百分比"
                 android:textColor="#A0A0A0"
                 android:textSize="14sp" />
 

@@ -16,6 +16,7 @@ import com.example.lifegame.R
 import com.example.lifegame.data.entity.StatusEntity
 import com.example.lifegame.data.entity.StatusEffectEntity
 import com.example.lifegame.databinding.DialogAddStatusMultiEffectBinding
+import com.example.lifegame.databinding.DialogConfirmBinding
 import com.example.lifegame.databinding.FragmentAttributeBinding
 import com.example.lifegame.ui.base.BaseFragment
 import com.google.android.material.tabs.TabLayoutMediator
@@ -270,6 +271,7 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         
         val effects = effectsAdapter.getEffects()
         if (effects.isEmpty()) {
+            showValidationErrorDialog("请至少添加一个效果")
             return false
         }
         
@@ -304,6 +306,22 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         }
         
         return true
+    }
+
+    private fun showValidationErrorDialog(message: String) {
+        val dialogBinding = DialogConfirmBinding.inflate(layoutInflater)
+        dialogBinding.tvTitle.text = "提示"
+        dialogBinding.tvMessage.text = message
+        
+        val dialog = AlertDialog.Builder(requireContext(), R.style.Theme_LifeGame_Dialog)
+            .setView(dialogBinding.root)
+            .create()
+        
+        dialogBinding.btnCancel.visibility = View.GONE
+        dialogBinding.btnConfirm.text = "知道了"
+        dialogBinding.btnConfirm.setOnClickListener { dialog.dismiss() }
+        
+        dialog.show()
     }
 
     private fun saveStatus(

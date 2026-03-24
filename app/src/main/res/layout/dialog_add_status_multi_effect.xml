@@ -123,7 +123,7 @@
                 android:layout_marginEnd="4dp"
                 android:layout_weight="1"
                 android:backgroundTint="#3F51B5"
-                android:text="+周期"
+                android:text="周期"
                 android:textColor="@color/white"
                 android:textSize="12sp" />
 
@@ -135,7 +135,7 @@
                 android:layout_marginEnd="4dp"
                 android:layout_weight="1"
                 android:backgroundTint="#4CAF50"
-                android:text="+加成"
+                android:text="加成"
                 android:textColor="@color/white"
                 android:textSize="12sp" />
 
@@ -146,7 +146,7 @@
                 android:layout_marginStart="4dp"
                 android:layout_weight="1"
                 android:backgroundTint="#F44336"
-                android:text="+衰减"
+                android:text="削减"
                 android:textColor="@color/white"
                 android:textSize="12sp" />
 

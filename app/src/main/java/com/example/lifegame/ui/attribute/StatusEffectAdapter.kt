@@ -106,8 +106,8 @@ class StatusEffectAdapter(
             
             val typeText = when (effect.effectType) {
                 0 -> "周期性变动"
-                1 -> "属性加成"
-                else -> "属性衰减"
+                1 -> "属性获取加成"
+                else -> "属性获取减少"
             }
             binding.tvEffectType.text = typeText
 

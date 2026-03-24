@@ -441,6 +441,22 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         dialog.show()
     }
 
+    private fun showValidationErrorDialog(message: String) {
+        val dialogBinding = DialogConfirmBinding.inflate(layoutInflater)
+        dialogBinding.tvTitle.text = "提示"
+        dialogBinding.tvMessage.text = message
+        
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+        
+        dialogBinding.btnCancel.visibility = View.GONE
+        dialogBinding.btnConfirm.text = "知道了"
+        dialogBinding.btnConfirm.setOnClickListener { dialog.dismiss() }
+        
+        dialog.show()
+    }
+
     private fun showClaimRewardDialog(questWithDetails: QuestWithDetails) {
         val dialogBinding = DialogClaimRewardBinding.inflate(layoutInflater)
         val quest = questWithDetails.quest
@@ -602,6 +618,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             }
 
             if (type != 0 && type != 3 && selectedDeadline == null) {
+                showValidationErrorDialog("主线和支线任务必须选择截止日期")
                 return@setOnClickListener
             }
 
@@ -628,6 +645,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             }
 
             if (attrGoals.isEmpty() && behGoals.isEmpty()) {
+                showValidationErrorDialog("请至少添加一个完成目标")
                 return@setOnClickListener
             }
 

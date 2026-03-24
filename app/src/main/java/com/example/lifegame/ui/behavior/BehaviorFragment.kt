@@ -735,8 +735,10 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             val focusDurationStr = dialogBinding.etFocusDuration.text?.toString()?.trim()
 
             if (name.isNullOrEmpty()) {
+                dialogBinding.tilName.error = "请输入行动名称"
                 return@setOnClickListener
             }
+            dialogBinding.tilName.error = null
 
             val energyValue = energyValueStr?.toIntOrNull() ?: 10
             val focusDuration = focusDurationStr?.toIntOrNull() ?: 0
