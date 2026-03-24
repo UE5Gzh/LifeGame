@@ -11,6 +11,7 @@
     <color name="card_dark">#1E1E1E</color>
     <color name="text_primary">#FFFFFF</color>
     <color name="text_secondary">#B3FFFFFF</color>
+    <color name="text_hint">#888888</color>
     
     <!-- Attribute colors -->
     <color name="attr_iq">#2196F3</color>

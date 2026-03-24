@@ -4,8 +4,6 @@ import android.app.DatePickerDialog
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
-import android.widget.EditText
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -13,6 +11,12 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
 import com.example.lifegame.data.entity.LogEntity
+import com.example.lifegame.databinding.DialogConfirmBinding
+import com.example.lifegame.databinding.DialogDefaultLockSettingsBinding
+import com.example.lifegame.databinding.DialogExportSuccessBinding
+import com.example.lifegame.databinding.DialogOptionsBinding
+import com.example.lifegame.databinding.DialogStorageSettingsBinding
+import com.example.lifegame.databinding.DialogWriteLogBinding
 import com.example.lifegame.databinding.FragmentLogBinding
 import com.example.lifegame.ui.base.BaseFragment
 import com.example.lifegame.util.LogExportHelper
@@ -55,14 +59,24 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
         }
 
         binding.btnClear.setOnClickListener {
-            MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                .setTitle("清空日志")
-                .setMessage("确定要清空所有未锁定的日志记录吗？")
-                .setPositiveButton("确定") { _, _ ->
-                    viewModel.clearLogs()
-                }
-                .setNegativeButton("取消", null)
-                .show()
+            val dialogBinding = DialogConfirmBinding.inflate(LayoutInflater.from(requireContext()))
+            dialogBinding.tvTitle.text = "清空日志"
+            dialogBinding.tvMessage.text = "确定要清空所有未锁定的日志记录吗？此操作不可撤销。"
+
+            val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                .setView(dialogBinding.root)
+                .create()
+
+            dialogBinding.btnCancel.setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialogBinding.btnConfirm.setOnClickListener {
+                viewModel.clearLogs()
+                dialog.dismiss()
+            }
+
+            dialog.show()
         }
 
         binding.btnSearch.setOnClickListener {
@@ -76,39 +90,59 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
 
     private fun showLogOptionsDialog(log: LogEntity) {
         val lockText = if (log.isLocked) "解锁此日志" else "锁定此日志"
-        val options = arrayOf("删除此日志", lockText)
+        
+        val dialogBinding = DialogOptionsBinding.inflate(LayoutInflater.from(requireContext()))
+        dialogBinding.tvTitle.text = "日志操作"
+        
+        dialogBinding.btnOption1.text = "删除此日志"
+        dialogBinding.btnOption1.visibility = View.VISIBLE
+        
+        dialogBinding.btnOption2.text = lockText
+        dialogBinding.btnOption2.visibility = View.VISIBLE
 
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle("日志操作")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> viewModel.deleteLog(log)
-                    1 -> viewModel.toggleLogLock(log)
-                }
-            }
-            .show()
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnOption1.setOnClickListener {
+            viewModel.deleteLog(log)
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnOption2.setOnClickListener {
+            viewModel.toggleLogLock(log)
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showAddLogDialog() {
-        val editText = EditText(requireContext()).apply {
-            hint = "输入你的想法..."
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
-            minLines = 3
-            maxLines = 10
-            gravity = android.view.Gravity.TOP or android.view.Gravity.START
+        val dialogBinding = DialogWriteLogBinding.inflate(LayoutInflater.from(requireContext()))
+        val dateFormat = SimpleDateFormat("yyyy年MM月dd日 EEEE", Locale.CHINESE)
+        dialogBinding.tvDate.text = dateFormat.format(Date())
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
         }
 
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle("写日志")
-            .setView(editText)
-            .setPositiveButton("保存") { _, _ ->
-                val content = editText.text.toString().trim()
-                if (content.isNotEmpty()) {
-                    viewModel.insertCustomLog(content)
-                }
+        dialogBinding.btnConfirm.setOnClickListener {
+            val content = dialogBinding.etContent.text.toString().trim()
+            if (content.isNotEmpty()) {
+                viewModel.insertCustomLog(content)
             }
-            .setNegativeButton("取消", null)
-            .show()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showDatePickerForSearch() {
@@ -148,22 +182,42 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
     }
 
     private fun showSettingsDialog() {
-        val settingsView = LayoutInflater.from(requireContext()).inflate(
-            android.R.layout.select_dialog_item, null, false
-        )
+        val dialogBinding = DialogOptionsBinding.inflate(LayoutInflater.from(requireContext()))
+        dialogBinding.tvTitle.text = "日志设置"
         
-        val options = arrayOf("导出日志", "日志存储设置", "任务日志默认锁定设置")
+        dialogBinding.btnOption1.text = "导出日志"
+        dialogBinding.btnOption1.visibility = View.VISIBLE
         
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle("日志设置")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> exportLogs()
-                    1 -> showStorageSettingsDialog()
-                    2 -> showDefaultLockSettingsDialog()
-                }
-            }
-            .show()
+        dialogBinding.btnOption2.text = "日志存储设置"
+        dialogBinding.btnOption2.visibility = View.VISIBLE
+        
+        dialogBinding.btnOption3.text = "任务日志默认锁定设置"
+        dialogBinding.btnOption3.visibility = View.VISIBLE
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnOption1.setOnClickListener {
+            exportLogs()
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnOption2.setOnClickListener {
+            showStorageSettingsDialog()
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnOption3.setOnClickListener {
+            showDefaultLockSettingsDialog()
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun exportLogs() {
@@ -175,72 +229,80 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
         viewLifecycleOwner.lifecycleScope.launch {
             val file = LogExportHelper.exportLogsToCsv(requireContext(), logs)
             if (file != null) {
-                MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                    .setTitle("导出成功")
-                    .setMessage("日志已导出到:\n${file.name}\n\n是否立即分享?")
-                    .setPositiveButton("分享") { _, _ ->
-                        LogExportHelper.shareFile(requireContext(), file)
-                    }
-                    .setNegativeButton("稍后", null)
-                    .show()
+                val dialogBinding = DialogExportSuccessBinding.inflate(LayoutInflater.from(requireContext()))
+                dialogBinding.tvFilename.text = file.name
+
+                val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                    .setView(dialogBinding.root)
+                    .create()
+
+                dialogBinding.btnLater.setOnClickListener {
+                    dialog.dismiss()
+                }
+
+                dialogBinding.btnShare.setOnClickListener {
+                    LogExportHelper.shareFile(requireContext(), file)
+                    dialog.dismiss()
+                }
+
+                dialog.show()
             }
         }
     }
 
     private fun showStorageSettingsDialog() {
         val currentLimit = viewModel.getMaxLogLimit()
-        
-        val editText = EditText(requireContext()).apply {
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setText(currentLimit.toString())
-            setSelection(text.length)
+        val dialogBinding = DialogStorageSettingsBinding.inflate(LayoutInflater.from(requireContext()))
+        dialogBinding.etLimit.setText(currentLimit.toString())
+        dialogBinding.etLimit.setSelection(dialogBinding.etLimit.text?.length ?: 0)
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
         }
 
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle("日志存储设置")
-            .setMessage("设置最大日志存储数量 (50 - 20000)\n保存后将自动清理超出限制的未锁定日志。")
-            .setView(editText)
-            .setPositiveButton("保存") { _, _ ->
-                val inputStr = editText.text.toString()
-                val limit = inputStr.toIntOrNull()
-                
-                if (limit != null && limit in 50..20000) {
-                    viewModel.setMaxLogLimit(limit)
-                }
+        dialogBinding.btnConfirm.setOnClickListener {
+            val inputStr = dialogBinding.etLimit.text.toString()
+            val limit = inputStr.toIntOrNull()
+            
+            if (limit != null && limit in 50..20000) {
+                viewModel.setMaxLogLimit(limit)
             }
-            .setNegativeButton("取消", null)
-            .show()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showDefaultLockSettingsDialog() {
         val settings = viewModel.getDefaultLockSettings()
-        
-        val dialogView = LayoutInflater.from(requireContext()).inflate(
-            com.example.lifegame.R.layout.dialog_default_lock_settings, null, false
-        )
-        
-        val cbDaily = dialogView.findViewById<CheckBox>(com.example.lifegame.R.id.cb_daily_quest)
-        val cbMain = dialogView.findViewById<CheckBox>(com.example.lifegame.R.id.cb_main_quest)
-        val cbSide = dialogView.findViewById<CheckBox>(com.example.lifegame.R.id.cb_side_quest)
-        val cbWeekly = dialogView.findViewById<CheckBox>(com.example.lifegame.R.id.cb_weekly_quest)
-        
-        cbDaily.isChecked = settings["daily"] ?: false
-        cbMain.isChecked = settings["main"] ?: true
-        cbSide.isChecked = settings["side"] ?: true
-        cbWeekly.isChecked = settings["weekly"] ?: false
+        val dialogBinding = DialogDefaultLockSettingsBinding.inflate(LayoutInflater.from(requireContext()))
 
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle("日志默认锁定设置")
-            .setMessage("开启后，对应类型任务产生的日志将默认锁定，不会被自动清理。")
-            .setView(dialogView)
-            .setPositiveButton("保存") { _, _ ->
-                viewModel.setDefaultLockForQuestType(0, cbDaily.isChecked)
-                viewModel.setDefaultLockForQuestType(1, cbMain.isChecked)
-                viewModel.setDefaultLockForQuestType(2, cbSide.isChecked)
-                viewModel.setDefaultLockForQuestType(3, cbWeekly.isChecked)
-            }
-            .setNegativeButton("取消", null)
-            .show()
+        dialogBinding.switchDailyQuest.isChecked = settings["daily"] ?: false
+        dialogBinding.switchMainQuest.isChecked = settings["main"] ?: true
+        dialogBinding.switchSideQuest.isChecked = settings["side"] ?: true
+        dialogBinding.switchWeeklyQuest.isChecked = settings["weekly"] ?: false
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            viewModel.setDefaultLockForQuestType(0, dialogBinding.switchDailyQuest.isChecked)
+            viewModel.setDefaultLockForQuestType(1, dialogBinding.switchMainQuest.isChecked)
+            viewModel.setDefaultLockForQuestType(2, dialogBinding.switchSideQuest.isChecked)
+            viewModel.setDefaultLockForQuestType(3, dialogBinding.switchWeeklyQuest.isChecked)
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     override fun observeData() {
