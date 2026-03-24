@@ -285,13 +285,73 @@
             app:barrierDirection="bottom"
             app:constraint_referenced_ids="ll_periodic_params,ll_bonus_params,ll_decay_params" />
 
+        <TextView
+            android:id="@+id/tv_duration_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="持续时间（可选，不设置表示永久）"
+            android:textColor="#A0A0A0"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/barrier_params" />
+
+        <CheckBox
+            android:id="@+id/cb_has_duration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="启用持续时间"
+            android:textColor="@color/white"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_duration_label" />
+
+        <LinearLayout
+            android:id="@+id/ll_duration_params"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/cb_has_duration">
+
+            <EditText
+                android:id="@+id/et_duration_value"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/edit_text_background"
+                android:hint="持续时间"
+                android:inputType="number"
+                android:paddingHorizontal="12dp"
+                android:textColor="@color/white"
+                android:textColorHint="#808080" />
+
+            <Spinner
+                android:id="@+id/spinner_duration_unit"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/spinner_background"
+                android:popupBackground="@color/card_dark" />
+
+        </LinearLayout>
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/barrier_duration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="cb_has_duration,ll_duration_params" />
+
         <LinearLayout
             android:id="@+id/ll_buttons"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:orientation="horizontal"
-            app:layout_constraintTop_toBottomOf="@id/barrier_params">
+            app:layout_constraintTop_toBottomOf="@id/barrier_duration">
 
             <Button
                 android:id="@+id/btn_cancel"

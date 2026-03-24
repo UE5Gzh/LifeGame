@@ -140,6 +140,7 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         setupAttributeSpinner(dialogBinding)
         setupEffectTypeSwitcher(dialogBinding)
         setupPeriodUnitSpinner(dialogBinding)
+        setupDurationControls(dialogBinding)
         
         if (status != null) {
             dialogBinding.tvDialogTitle.text = "编辑状态"
@@ -163,6 +164,13 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
                     dialogBinding.rbDecay.isChecked = true
                     dialogBinding.etDecayPercent.setText(status.bonusPercent.toString())
                 }
+            }
+            
+            if (status.durationValue > 0) {
+                dialogBinding.cbHasDuration.isChecked = true
+                dialogBinding.llDurationParams.visibility = View.VISIBLE
+                dialogBinding.etDurationValue.setText(status.durationValue.toString())
+                dialogBinding.spinnerDurationUnit.setSelection(status.durationUnit)
             }
         }
         
@@ -242,6 +250,17 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
         dialogBinding.spinnerPeriodUnit.adapter = adapter
     }
 
+    private fun setupDurationControls(dialogBinding: DialogAddStatusBinding) {
+        val units = arrayOf("分钟", "小时", "天")
+        val adapter = ArrayAdapter(requireContext(), R.layout.spinner_item_dark, units)
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark)
+        dialogBinding.spinnerDurationUnit.adapter = adapter
+        
+        dialogBinding.cbHasDuration.setOnCheckedChangeListener { _, isChecked ->
+            dialogBinding.llDurationParams.visibility = if (isChecked) View.VISIBLE else View.GONE
+        }
+    }
+
     private fun validateInput(dialogBinding: DialogAddStatusBinding): Boolean {
         val name = dialogBinding.etName.text.toString().trim()
         if (name.isEmpty()) {
@@ -282,6 +301,14 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
                     Toast.makeText(requireContext(), "请输入0-100之间的衰减百分比", Toast.LENGTH_SHORT).show()
                     return false
                 }
+            }
+        }
+        
+        if (dialogBinding.cbHasDuration.isChecked) {
+            val durationValue = dialogBinding.etDurationValue.text.toString().trim()
+            if (durationValue.isEmpty() || durationValue.toIntOrNull()?.let { it <= 0 } != false) {
+                Toast.makeText(requireContext(), "请输入有效的持续时间", Toast.LENGTH_SHORT).show()
+                return false
             }
         }
         
@@ -329,6 +356,16 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
             }
         }
         
+        val durationValue: Int
+        val durationUnit: Int
+        if (dialogBinding.cbHasDuration.isChecked) {
+            durationValue = dialogBinding.etDurationValue.text.toString().toInt()
+            durationUnit = dialogBinding.spinnerDurationUnit.selectedItemPosition
+        } else {
+            durationValue = 0
+            durationUnit = 0
+        }
+        
         if (editingStatus != null) {
             val updatedStatus = editingStatus!!.copy(
                 name = name,
@@ -339,7 +376,9 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
                 periodValue = periodValue,
                 periodUnit = periodUnit,
                 changeValue = changeValue,
-                bonusPercent = bonusPercent
+                bonusPercent = bonusPercent,
+                durationValue = durationValue,
+                durationUnit = durationUnit
             )
             statusViewModel.updateStatus(updatedStatus)
             Toast.makeText(requireContext(), "状态已更新", Toast.LENGTH_SHORT).show()
@@ -353,7 +392,9 @@ class AttributeFragment : BaseFragment<FragmentAttributeBinding>() {
                 periodValue = periodValue,
                 periodUnit = periodUnit,
                 changeValue = changeValue,
-                bonusPercent = bonusPercent
+                bonusPercent = bonusPercent,
+                durationValue = durationValue,
+                durationUnit = durationUnit
             )
             Toast.makeText(requireContext(), "状态已创建", Toast.LENGTH_SHORT).show()
         }

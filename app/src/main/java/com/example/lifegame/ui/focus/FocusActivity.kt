@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.lifegame.databinding.ActivityFocusBinding
@@ -101,6 +102,19 @@ class FocusActivity : AppCompatActivity() {
     }
 
     private fun giveUpFocus() {
+        val dialog = AlertDialog.Builder(this, com.example.lifegame.R.style.Theme_LifeGame_Dialog)
+            .setTitle("放弃专注")
+            .setMessage("确定要放弃本次专注吗？放弃后专注时间将不会记录。")
+            .setNegativeButton("取消", null)
+            .setPositiveButton("确定放弃") { _, _ ->
+                performGiveUpFocus()
+            }
+            .create()
+        dialog.show()
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(android.graphics.Color.parseColor("#FF5252"))
+    }
+
+    private fun performGiveUpFocus() {
         if (isBound) {
             val stopIntent = Intent(this, FocusService::class.java).apply {
                 action = FocusService.ACTION_STOP_FOCUS

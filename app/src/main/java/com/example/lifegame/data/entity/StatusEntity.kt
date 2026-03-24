@@ -19,5 +19,7 @@ data class StatusEntity(
     val bonusPercent: Float = 0f,
     val lastTriggerTime: Long = 0L,
     val startTime: Long = 0L,
-    val sortOrder: Int = 0
+    val sortOrder: Int = 0,
+    val durationValue: Int = 0,
+    val durationUnit: Int = 0
 )

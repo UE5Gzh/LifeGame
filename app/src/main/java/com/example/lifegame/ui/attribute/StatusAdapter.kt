@@ -66,22 +66,39 @@ class StatusAdapter(
             if (status.effectType == 0) {
                 val unitStr = if (status.periodUnit == 0) "小时" else "天"
                 val sign = if (status.changeValue >= 0) "+" else ""
-                binding.tvEffectInfo.text = "效果: 每${status.periodValue}$unitStr $attrName $sign${formatValue(status.changeValue)}"
+                binding.tvEffectInfo.text = "效果: $attrName $sign${formatValue(status.changeValue)}/$unitStr"
                 
                 if (status.isEnabled) {
                     binding.tvNextTrigger.visibility = View.VISIBLE
                     val nextTrigger = calculateNextTriggerTime(status)
                     val sdf = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
-                    binding.tvNextTrigger.text = "下次触发: ${sdf.format(Date(nextTrigger))}"
+                    val nextTriggerText = "下次触发: ${sdf.format(Date(nextTrigger))}"
+                    
+                    if (status.durationValue > 0) {
+                        val remainingText = calculateRemainingTime(status)
+                        binding.tvNextTrigger.text = "$nextTriggerText | $remainingText"
+                    } else {
+                        binding.tvNextTrigger.text = nextTriggerText
+                    }
                 } else {
                     binding.tvNextTrigger.visibility = View.GONE
                 }
             } else if (status.effectType == 1) {
                 binding.tvEffectInfo.text = "加成: 获取$attrName +${formatValue(status.bonusPercent)}%"
-                binding.tvNextTrigger.visibility = View.GONE
+                if (status.isEnabled && status.durationValue > 0) {
+                    binding.tvNextTrigger.visibility = View.VISIBLE
+                    binding.tvNextTrigger.text = calculateRemainingTime(status)
+                } else {
+                    binding.tvNextTrigger.visibility = View.GONE
+                }
             } else {
                 binding.tvEffectInfo.text = "衰减: 获取$attrName -${formatValue(status.bonusPercent)}%"
-                binding.tvNextTrigger.visibility = View.GONE
+                if (status.isEnabled && status.durationValue > 0) {
+                    binding.tvNextTrigger.visibility = View.VISIBLE
+                    binding.tvNextTrigger.text = calculateRemainingTime(status)
+                } else {
+                    binding.tvNextTrigger.visibility = View.GONE
+                }
             }
 
             try {
@@ -132,6 +149,32 @@ class StatusAdapter(
             }
             
             return nextTrigger
+        }
+
+        private fun calculateRemainingTime(status: StatusEntity): String {
+            val durationMillis = when (status.durationUnit) {
+                0 -> status.durationValue * 60 * 1000L
+                1 -> status.durationValue * 60 * 60 * 1000L
+                else -> status.durationValue * 24 * 60 * 60 * 1000L
+            }
+            
+            val elapsed = System.currentTimeMillis() - status.startTime
+            val remaining = durationMillis - elapsed
+            
+            if (remaining <= 0) {
+                return "已到期"
+            }
+            
+            val minutes = remaining / (60 * 1000)
+            val hours = minutes / 60
+            val days = hours / 24
+            
+            return when {
+                days > 0 -> "剩余${days}天"
+                hours > 0 -> "剩余${hours}小时"
+                minutes > 0 -> "剩余${minutes}分钟"
+                else -> "即将到期"
+            }
         }
     }
 

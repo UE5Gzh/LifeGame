@@ -9,6 +9,7 @@ import com.example.lifegame.data.entity.QuestEffectEntity
 import com.example.lifegame.data.entity.QuestEntity
 import com.example.lifegame.data.entity.QuestWithDetails
 import com.example.lifegame.data.entity.BehaviorWithModifiers
+import com.example.lifegame.data.entity.StatusEntity
 import com.example.lifegame.repository.BehaviorRepository
 import com.example.lifegame.repository.AttributeRepository
 import com.example.lifegame.repository.QuestRepository
@@ -149,14 +150,20 @@ class QuestViewModel @Inject constructor(
         val bonusStatuses = statusRepository.getEnabledBonusStatusesForAttribute(attributeId).first()
         val decayStatuses = statusRepository.getEnabledDecayStatusesForAttribute(attributeId).first()
         
+        val now = System.currentTimeMillis()
+        
         var totalBonus = 0f
         for (status in bonusStatuses) {
-            totalBonus += status.bonusPercent
+            if (!isStatusExpired(status, now)) {
+                totalBonus += status.bonusPercent
+            }
         }
         
         var totalDecay = 0f
         for (status in decayStatuses) {
-            totalDecay += status.bonusPercent
+            if (!isStatusExpired(status, now)) {
+                totalDecay += status.bonusPercent
+            }
         }
         
         if (totalDecay > 100f) totalDecay = 100f
@@ -165,6 +172,19 @@ class QuestViewModel @Inject constructor(
         val afterDecay = afterBonus * (1 - totalDecay / 100f)
         
         return afterDecay
+    }
+
+    private fun isStatusExpired(status: StatusEntity, now: Long): Boolean {
+        if (status.durationValue <= 0 || !status.isEnabled) return false
+        
+        val durationMillis = when (status.durationUnit) {
+            0 -> status.durationValue * 60 * 1000L
+            1 -> status.durationValue * 60 * 60 * 1000L
+            else -> status.durationValue * 24 * 60 * 60 * 1000L
+        }
+        
+        val elapsed = now - status.startTime
+        return elapsed >= durationMillis
     }
 
     fun calculateProgress(quest: QuestWithDetails, currentAttributes: List<AttributeWithRanks>): Float {

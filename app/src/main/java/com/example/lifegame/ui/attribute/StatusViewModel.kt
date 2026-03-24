@@ -53,7 +53,9 @@ class StatusViewModel @Inject constructor(
         periodValue: Int,
         periodUnit: Int,
         changeValue: Float,
-        bonusPercent: Float
+        bonusPercent: Float,
+        durationValue: Int = 0,
+        durationUnit: Int = 0
     ) {
         viewModelScope.launch {
             val status = StatusEntity(
@@ -66,14 +68,16 @@ class StatusViewModel @Inject constructor(
                 periodValue = periodValue,
                 periodUnit = periodUnit,
                 changeValue = changeValue,
-                bonusPercent = bonusPercent
+                bonusPercent = bonusPercent,
+                durationValue = durationValue,
+                durationUnit = durationUnit
             )
             statusRepository.insertStatus(status)
             
             logRepository.insertLog(
                 type = "STATUS_CREATED",
                 title = "创建状态: $name",
-                details = if (effectType == 0) "周期性变动" else "属性加成"
+                details = if (effectType == 0) "周期性变动" else if (effectType == 1) "属性加成" else "属性衰减"
             )
         }
     }
@@ -129,6 +133,11 @@ class StatusViewModel @Inject constructor(
             val enabledStatuses = statusRepository.enabledPeriodicStatuses.stateIn(viewModelScope).value
             
             for (status in enabledStatuses) {
+                if (isStatusExpired(status)) {
+                    autoDisableStatus(status)
+                    continue
+                }
+                
                 val periodMillis = if (status.periodUnit == 0) {
                     status.periodValue * 60 * 60 * 1000L
                 } else {
@@ -161,6 +170,42 @@ class StatusViewModel @Inject constructor(
         }
     }
 
+    fun checkAndDisableExpiredStatuses() {
+        viewModelScope.launch {
+            val enabledStatuses = statusRepository.enabledStatuses.stateIn(viewModelScope).value
+            
+            for (status in enabledStatuses) {
+                if (isStatusExpired(status)) {
+                    autoDisableStatus(status)
+                }
+            }
+        }
+    }
+
+    private fun isStatusExpired(status: StatusEntity): Boolean {
+        if (status.durationValue <= 0 || !status.isEnabled) return false
+        
+        val durationMillis = when (status.durationUnit) {
+            0 -> status.durationValue * 60 * 1000L
+            1 -> status.durationValue * 60 * 60 * 1000L
+            else -> status.durationValue * 24 * 60 * 60 * 1000L
+        }
+        
+        val elapsed = System.currentTimeMillis() - status.startTime
+        return elapsed >= durationMillis
+    }
+
+    private suspend fun autoDisableStatus(status: StatusEntity) {
+        val updatedStatus = status.copy(isEnabled = false)
+        statusRepository.updateStatus(updatedStatus)
+        
+        logRepository.insertLog(
+            type = "STATUS_EXPIRED",
+            title = "状态到期: ${status.name}",
+            details = "持续时间已结束，自动关闭"
+        )
+    }
+
     suspend fun calculateFinalChangeForAttribute(attributeId: Long, baseChange: Float): Float {
         if (baseChange <= 0f) return baseChange
         
@@ -171,12 +216,16 @@ class StatusViewModel @Inject constructor(
         
         var totalBonus = 0f
         for (status in bonusStatuses) {
-            totalBonus += status.bonusPercent
+            if (!isStatusExpired(status)) {
+                totalBonus += status.bonusPercent
+            }
         }
         
         var totalDecay = 0f
         for (status in decayStatuses) {
-            totalDecay += status.bonusPercent
+            if (!isStatusExpired(status)) {
+                totalDecay += status.bonusPercent
+            }
         }
         
         if (totalDecay > 100f) totalDecay = 100f
