@@ -233,7 +233,7 @@ class StatusEffectAdapter(
         }
 
         private fun setupPeriodUnitSpinner(position: Int) {
-            val units = arrayOf("小时", "天")
+            val units = arrayOf("分钟", "小时", "天")
             val adapter = ArrayAdapter(binding.root.context, R.layout.spinner_item_dark, units)
             adapter.setDropDownViewResource(R.layout.spinner_dropdown_item_dark)
             binding.spinnerPeriodUnit.adapter = adapter

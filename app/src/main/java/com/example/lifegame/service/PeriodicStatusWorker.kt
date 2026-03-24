@@ -56,10 +56,10 @@ class PeriodicStatusWorker @AssistedInject constructor(
         effect: com.example.lifegame.data.entity.StatusEffectEntity,
         now: Long
     ) {
-        val periodMillis = if (effect.periodUnit == 0) {
-            effect.periodValue * 60 * 60 * 1000L
-        } else {
-            effect.periodValue * 24 * 60 * 60 * 1000L
+        val periodMillis = when (effect.periodUnit) {
+            0 -> effect.periodValue * 60 * 1000L
+            1 -> effect.periodValue * 60 * 60 * 1000L
+            else -> effect.periodValue * 24 * 60 * 60 * 1000L
         }
         
         val lastTrigger = if (effect.lastTriggerTime == 0L) status.startTime else effect.lastTriggerTime
@@ -123,7 +123,7 @@ class PeriodicStatusWorker @AssistedInject constructor(
         
         fun schedule(context: Context) {
             val workRequest = PeriodicWorkRequestBuilder<PeriodicStatusWorker>(
-                15, TimeUnit.MINUTES
+                1, TimeUnit.MINUTES
             ).build()
             
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(

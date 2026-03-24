@@ -260,14 +260,20 @@ class QuestViewModel @Inject constructor(
                     }
                 }
             }
-            questRepository.updateQuest(questWithDetails.quest.copy(status = 2, isFocused = false))
             
-            val questType = getTypeStr(questWithDetails.quest.type)
+            val questType = questWithDetails.quest.type
+            if (questType == 1 || questType == 2) {
+                questRepository.deleteQuest(questWithDetails.quest)
+            } else {
+                questRepository.updateQuest(questWithDetails.quest.copy(status = 2, isFocused = false))
+            }
+            
+            val questTypeStr = getTypeStr(questType)
             logRepository.insertLogWithDefaultLock(
                 type = "QUEST_COMPLETION",
-                title = "完成${questType}任务: ${questWithDetails.quest.name}",
+                title = "完成${questTypeStr}任务: ${questWithDetails.quest.name}",
                 details = if (rewardDetails.isEmpty()) "获得奖励: 无" else "获得奖励: $rewardDetails",
-                questType = questWithDetails.quest.type
+                questType = questType
             )
             
             com.example.lifegame.util.AttributeChangeBus.postChanges(attributeChanges)
@@ -280,24 +286,27 @@ class QuestViewModel @Inject constructor(
         
         val sortedRanks = ranks.sortedBy { it.minValue }
         
-        fun findRank(value: Float): com.example.lifegame.data.entity.RankEntity? {
-            return sortedRanks.find { value >= it.minValue && value < it.maxValue }
-                ?: if (value >= sortedRanks.last().maxValue) sortedRanks.last() else null
+        fun findRankIndex(value: Float): Int {
+            for (i in sortedRanks.indices) {
+                val rank = sortedRanks[i]
+                if (value >= rank.minValue && value < rank.maxValue) {
+                    return i
+                }
+            }
+            return if (value >= sortedRanks.last().maxValue) sortedRanks.lastIndex else -1
         }
         
-        val oldRank = findRank(oldValue)
-        val newRank = findRank(newValue)
+        val oldRankIndex = findRankIndex(oldValue)
+        val newRankIndex = findRankIndex(newValue)
         
-        if (newRank != null && (oldRank == null || newRank.id != oldRank.id)) {
-            val oldRankIndex = oldRank?.let { sortedRanks.indexOf(it) } ?: -1
-            val newRankIndex = sortedRanks.indexOf(newRank)
-            
-            if (newRankIndex > oldRankIndex) {
-                val oldRankName = oldRank?.name ?: "无"
+        if (newRankIndex > oldRankIndex) {
+            for (i in (oldRankIndex + 1)..newRankIndex) {
+                val prevRank = if (i > 0) sortedRanks[i - 1].name else "无"
+                val currentRank = sortedRanks[i].name
                 com.example.lifegame.util.CelebrationBus.postRankUp(
                     attributeName = attributeName,
-                    oldRank = oldRankName,
-                    newRank = newRank.name
+                    oldRank = prevRank,
+                    newRank = currentRank
                 )
             }
         }
