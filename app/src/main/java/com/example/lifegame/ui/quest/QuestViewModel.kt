@@ -42,8 +42,6 @@ class QuestViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences("quest_prefs", Context.MODE_PRIVATE)
-    
-    private val celebratedQuestIds = mutableSetOf<Long>()
 
     private val _selectedTabType = MutableStateFlow(sharedPreferences.getInt("selected_tab_type", 0))
     val selectedTabType: StateFlow<Int> = _selectedTabType.asStateFlow()
@@ -134,22 +132,6 @@ class QuestViewModel @Inject constructor(
                         questRepository.updateQuest(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()))
                         val resetBehaviors = q.behaviorGoals.map { it.copy(currentCount = 0) }
                         questRepository.updateQuestWithDetails(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()), q.attributeGoals, resetBehaviors, q.effects)
-                    }
-                }
-            }
-        }
-    }
-
-    fun checkQuestCompletions(currentAttributes: List<AttributeWithRanks>) {
-        viewModelScope.launch {
-            val allQuests = quests.value
-            for (q in allQuests) {
-                if (q.quest.status == 0 && q.quest.id !in celebratedQuestIds) {
-                    val progress = calculateProgress(q, currentAttributes)
-                    if (progress >= 1f) {
-                        celebratedQuestIds.add(q.quest.id)
-                        questRepository.updateQuest(q.quest.copy(status = 1))
-                        com.example.lifegame.util.CelebrationBus.postQuestComplete(q.quest.name, q.quest.type)
                     }
                 }
             }

@@ -204,7 +204,6 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.attributes.collect {
-                        viewModel.checkQuestCompletions(it)
                         adapter.notifyDataSetChanged()
                     }
                 }
