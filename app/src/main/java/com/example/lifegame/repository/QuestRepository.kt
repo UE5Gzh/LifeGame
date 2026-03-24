@@ -55,4 +55,8 @@ class QuestRepository @Inject constructor(
     suspend fun getActiveQuestsWithDetails(): List<QuestWithDetails> {
         return questDao.getActiveQuestsWithDetails()
     }
+
+    fun getFocusedQuest(): Flow<QuestWithDetails?> {
+        return questDao.getFocusedQuest()
+    }
 }

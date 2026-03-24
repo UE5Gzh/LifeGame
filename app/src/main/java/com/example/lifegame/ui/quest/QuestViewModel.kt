@@ -1,5 +1,7 @@
 package com.example.lifegame.ui.quest
 
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lifegame.data.entity.AttributeWithRanks
@@ -16,8 +18,11 @@ import com.example.lifegame.repository.QuestRepository
 import com.example.lifegame.repository.LogRepository
 import com.example.lifegame.repository.StatusRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -32,8 +37,19 @@ class QuestViewModel @Inject constructor(
     private val attributeRepository: AttributeRepository,
     private val behaviorRepository: BehaviorRepository,
     private val logRepository: LogRepository,
-    private val statusRepository: StatusRepository
+    private val statusRepository: StatusRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    private val sharedPreferences: SharedPreferences = context.getSharedPreferences("quest_prefs", Context.MODE_PRIVATE)
+
+    private val _selectedTabType = MutableStateFlow(sharedPreferences.getInt("selected_tab_type", 0))
+    val selectedTabType: StateFlow<Int> = _selectedTabType.asStateFlow()
+
+    fun saveSelectedTabType(tabType: Int) {
+        _selectedTabType.value = tabType
+        sharedPreferences.edit().putInt("selected_tab_type", tabType).apply()
+    }
 
     val attributes: StateFlow<List<AttributeWithRanks>> = attributeRepository.allAttributesWithRanks
         .stateIn(
@@ -332,6 +348,17 @@ class QuestViewModel @Inject constructor(
     fun updateQuestSortOrders(quests: List<QuestEntity>) {
         viewModelScope.launch {
             questRepository.updateQuests(quests)
+        }
+    }
+
+    fun updateQuestWithDetails(
+        quest: QuestEntity,
+        attributeGoals: List<QuestAttributeGoalEntity>,
+        behaviorGoals: List<QuestBehaviorGoalEntity>,
+        effects: List<QuestEffectEntity>
+    ) {
+        viewModelScope.launch {
+            questRepository.updateQuestWithDetails(quest, attributeGoals, behaviorGoals, effects)
         }
     }
 

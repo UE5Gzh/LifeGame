@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.lifegame.R
 import com.example.lifegame.data.entity.AttributeEntity
 import com.example.lifegame.data.entity.AttributeWithRanks
+import com.example.lifegame.data.entity.QuestWithDetails
 import com.example.lifegame.databinding.DialogAddAttributeBinding
 import com.example.lifegame.databinding.DialogEditAttributeBinding
 import com.example.lifegame.databinding.FragmentAttributeListBinding
@@ -59,8 +60,56 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
                         adapter.submitList(attributes)
                     }
                 }
+                
+                launch {
+                    viewModel.focusedQuest.collect { quest ->
+                        updateFocusedQuestCard(quest)
+                    }
+                }
             }
         }
+    }
+
+    private fun updateFocusedQuestCard(quest: QuestWithDetails?) {
+        if (quest == null) {
+            binding.cardFocusedQuest.visibility = View.GONE
+            return
+        }
+
+        binding.cardFocusedQuest.visibility = View.VISIBLE
+        binding.tvFocusedQuestName.text = "关注任务：${quest.quest.name}"
+
+        val progress = calculateQuestProgress(quest)
+        binding.pbFocusedQuest.progress = progress
+        binding.tvFocusedQuestProgress.text = "$progress%"
+    }
+
+    private fun calculateQuestProgress(quest: QuestWithDetails): Int {
+        if (quest.attributeGoals.isEmpty() && quest.behaviorGoals.isEmpty()) {
+            return 0
+        }
+
+        var totalProgress = 0f
+        var goalCount = 0
+
+        quest.behaviorGoals.forEach { goal ->
+            if (goal.targetCount > 0) {
+                totalProgress += (goal.currentCount.toFloat() / goal.targetCount.toFloat()).coerceIn(0f, 1f)
+                goalCount++
+            }
+        }
+
+        quest.attributeGoals.forEach { goal ->
+            val attr = viewModel.attributes.value.find { it.attribute.id == goal.attributeId }?.attribute
+            if (attr != null && goal.targetValue > 0) {
+                val progress = (attr.currentValue / goal.targetValue).coerceIn(0f, 1f)
+                totalProgress += progress
+                goalCount++
+            }
+        }
+
+        if (goalCount == 0) return 0
+        return (totalProgress / goalCount * 100).roundToInt()
     }
 
     private fun setupRecyclerView() {
@@ -129,9 +178,7 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
             .setView(dialogBinding.root)
             .create()
 
-        var selectedColor = ""
         val colorAdapter = ColorAdapter(null) { colorHex ->
-            selectedColor = colorHex
         }
         dialogBinding.rvColors.layoutManager = GridLayoutManager(requireContext(), 6)
         dialogBinding.rvColors.adapter = colorAdapter
@@ -150,6 +197,7 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
             }
 
             val initialValue = initialValueStr?.toFloatOrNull() ?: 10f
+            val selectedColor = colorAdapter.getSelectedColor()
 
             viewModel.addAttribute(name, initialValue, selectedColor)
             dialog.dismiss()
@@ -167,9 +215,7 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
         dialogBinding.tvDialogTitle.text = "修改 ${attribute.name}"
         dialogBinding.etCurrentValue.setText(formatAttributeValue(attribute.currentValue))
 
-        var selectedColor = attribute.colorHex
-        val colorAdapter = ColorAdapter(selectedColor) { colorHex ->
-            selectedColor = colorHex
+        val colorAdapter = ColorAdapter(attribute.colorHex) { colorHex ->
         }
         dialogBinding.rvColors.layoutManager = GridLayoutManager(requireContext(), 6)
         dialogBinding.rvColors.adapter = colorAdapter
@@ -189,6 +235,7 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
         dialogBinding.btnConfirm.setOnClickListener {
             val currentValueStr = dialogBinding.etCurrentValue.text?.toString()?.trim()
             val currentValue = currentValueStr?.toFloatOrNull() ?: attribute.currentValue
+            val selectedColor = colorAdapter.getSelectedColor()
 
             viewModel.updateAttribute(attribute.copy(
                 currentValue = currentValue,

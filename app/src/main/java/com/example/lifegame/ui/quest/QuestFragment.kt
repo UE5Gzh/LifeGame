@@ -1,7 +1,9 @@
 package com.example.lifegame.ui.quest
 
 import android.app.DatePickerDialog
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
@@ -31,6 +33,7 @@ import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import kotlin.math.abs
 
 @AndroidEntryPoint
 class QuestFragment : BaseFragment<FragmentQuestBinding>() {
@@ -53,6 +56,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         setupRecyclerView()
         setupTabLayout()
+        setupGestureDetector()
 
         binding.btnAdd.setOnClickListener {
             if (!isSortMode) {
@@ -131,10 +135,51 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         itemTouchHelper = ItemTouchHelper(touchHelperCallback)
     }
 
+    private lateinit var gestureDetector: GestureDetector
+
+    private fun setupGestureDetector() {
+        gestureDetector = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
+            private val SWIPE_THRESHOLD = 100
+            private val SWIPE_VELOCITY_THRESHOLD = 100
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if (e1 == null) return false
+                
+                val diffX = e2.x - e1.x
+                if (abs(diffX) > SWIPE_THRESHOLD && abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                    val tabCount = binding.tabQuestType.tabCount
+                    val currentTab = binding.tabQuestType.selectedTabPosition
+                    
+                    if (diffX > 0 && currentTab > 0) {
+                        binding.tabQuestType.getTabAt(currentTab - 1)?.select()
+                        return true
+                    } else if (diffX < 0 && currentTab < tabCount - 1) {
+                        binding.tabQuestType.getTabAt(currentTab + 1)?.select()
+                        return true
+                    }
+                }
+                return false
+            }
+        })
+        
+        binding.rvQuests.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
+            false
+        }
+    }
+
     private fun setupTabLayout() {
+        currentSelectedTabType = viewModel.selectedTabType.value
+        binding.tabQuestType.selectTab(binding.tabQuestType.getTabAt(currentSelectedTabType))
         binding.tabQuestType.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 currentSelectedTabType = tab?.position ?: 0
+                viewModel.saveSelectedTabType(currentSelectedTabType)
                 filterQuests()
             }
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
@@ -214,6 +259,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         if (quest.status == 0) {
             options.add("立即完成")
             options.add("放弃任务")
+            options.add("编辑任务")
             if (quest.isFocused) {
                 options.add("取消关注")
             } else {
@@ -248,6 +294,9 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                             }
                             .setNegativeButton("取消", null)
                             .show()
+                    }
+                    "编辑任务" -> {
+                        showEditQuestDialog(questWithDetails)
                     }
                     "设为关注任务", "取消关注" -> {
                         viewModel.toggleQuestFocus(quest)
@@ -498,6 +547,257 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
             parseEffectsContainer(dialogBinding.llPunishmentsContainer)
 
             viewModel.createQuest(name, type, selectedDeadline, attrGoals, behGoals, effects)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showEditQuestDialog(questWithDetails: QuestWithDetails) {
+        val quest = questWithDetails.quest
+        val dialogBinding = DialogCreateQuestBinding.inflate(layoutInflater)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(dialogBinding.root)
+
+        dialogBinding.etName.setText(quest.name)
+        dialogBinding.spinnerType.setSelection(when (quest.type) {
+            0 -> 0
+            3 -> 1
+            1 -> 2
+            else -> 3
+        })
+
+        val availableAttributes = viewModel.attributes.value
+        val availableBehaviors = viewModel.behaviors.value
+
+        var selectedDeadline: Long? = quest.deadline
+
+        if (quest.deadline != null) {
+            dialogBinding.tvDeadlineLabel.visibility = View.VISIBLE
+            dialogBinding.tvDeadline.visibility = View.VISIBLE
+            val format = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+            dialogBinding.tvDeadline.text = format.format(java.util.Date(quest.deadline!!))
+        }
+
+        dialogBinding.spinnerType.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (position == 0 || position == 1) {
+                    dialogBinding.tvDeadlineLabel.visibility = View.GONE
+                    dialogBinding.tvDeadline.visibility = View.GONE
+                    selectedDeadline = null
+                } else {
+                    dialogBinding.tvDeadlineLabel.visibility = View.VISIBLE
+                    dialogBinding.tvDeadline.visibility = View.VISIBLE
+                    if (quest.deadline != null) {
+                        val format = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                        dialogBinding.tvDeadline.text = format.format(java.util.Date(quest.deadline!!))
+                    }
+                }
+            }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+
+        dialogBinding.tvDeadline.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            DatePickerDialog(
+                requireContext(),
+                { _, year, month, dayOfMonth ->
+                    calendar.set(year, month, dayOfMonth, 23, 59, 59)
+                    selectedDeadline = calendar.timeInMillis
+                    val format = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                    dialogBinding.tvDeadline.text = format.format(calendar.time)
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            ).show()
+        }
+
+        questWithDetails.attributeGoals.forEach { goal ->
+            val rowBinding = ItemQuestAttrGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
+            val attrAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableAttributes.map { it.attribute.name })
+            attrAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            rowBinding.spinnerAttr.adapter = attrAdapter
+            val attrIndex = availableAttributes.indexOfFirst { it.attribute.id == goal.attributeId }
+            if (attrIndex >= 0) rowBinding.spinnerAttr.setSelection(attrIndex)
+            rowBinding.etTargetVal.setText(goal.targetValue.toString())
+            rowBinding.btnRemove.setOnClickListener { dialogBinding.llGoalsContainer.removeView(rowBinding.root) }
+            rowBinding.root.tag = "attr"
+        }
+
+        questWithDetails.behaviorGoals.forEach { goal ->
+            val rowBinding = ItemQuestBehGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
+            val behAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableBehaviors.map { it.behavior.name })
+            behAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            rowBinding.spinnerBeh.adapter = behAdapter
+            val behIndex = availableBehaviors.indexOfFirst { it.behavior.id == goal.behaviorId }
+            if (behIndex >= 0) rowBinding.spinnerBeh.setSelection(behIndex)
+            rowBinding.etTargetCount.setText(goal.targetCount.toString())
+            rowBinding.btnRemove.setOnClickListener { dialogBinding.llGoalsContainer.removeView(rowBinding.root) }
+            rowBinding.root.tag = "beh"
+        }
+
+        fun addEffectRow(container: ViewGroup, isPunishment: Boolean, existingEffect: QuestEffectEntity? = null) {
+            val rowBinding = ItemQuestEffectBinding.inflate(layoutInflater, container, true)
+            
+            val typeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, listOf("属性变动", "文本描述"))
+            typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            rowBinding.spinnerType.adapter = typeAdapter
+
+            if (availableAttributes.isNotEmpty()) {
+                val attrAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableAttributes.map { it.attribute.name })
+                attrAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                rowBinding.spinnerAttr.adapter = attrAdapter
+            }
+
+            existingEffect?.let { e ->
+                rowBinding.spinnerType.setSelection(e.type)
+                if (e.type == 0 && e.attributeId != null && e.valueChange != null) {
+                    val attrIndex = availableAttributes.indexOfFirst { it.attribute.id == e.attributeId }
+                    if (attrIndex >= 0) rowBinding.spinnerAttr.setSelection(attrIndex)
+                    rowBinding.etValChange.setText(e.valueChange.toString())
+                } else if (e.type == 1 && e.text != null) {
+                    rowBinding.etTextDesc.setText(e.text)
+                }
+            }
+
+            rowBinding.spinnerType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    if (position == 0) {
+                        rowBinding.llAttrChange.visibility = View.VISIBLE
+                        rowBinding.tilText.visibility = View.GONE
+                    } else {
+                        rowBinding.llAttrChange.visibility = View.GONE
+                        rowBinding.tilText.visibility = View.VISIBLE
+                    }
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+
+            rowBinding.btnRemove.setOnClickListener { container.removeView(rowBinding.root) }
+            rowBinding.root.tag = isPunishment
+        }
+
+        questWithDetails.effects.filter { !it.isPunishment }.forEach { e ->
+            addEffectRow(dialogBinding.llRewardsContainer, false, e)
+        }
+
+        questWithDetails.effects.filter { it.isPunishment }.forEach { e ->
+            addEffectRow(dialogBinding.llPunishmentsContainer, true, e)
+        }
+
+        dialogBinding.btnAddAttrGoal.setOnClickListener {
+            if (availableAttributes.isEmpty()) {
+                Toast.makeText(requireContext(), "请先创建属性", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val rowBinding = ItemQuestAttrGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
+            val attrAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableAttributes.map { it.attribute.name })
+            attrAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            rowBinding.spinnerAttr.adapter = attrAdapter
+            rowBinding.btnRemove.setOnClickListener { dialogBinding.llGoalsContainer.removeView(rowBinding.root) }
+            rowBinding.root.tag = "attr"
+        }
+
+        dialogBinding.btnAddBehGoal.setOnClickListener {
+            if (availableBehaviors.isEmpty()) {
+                Toast.makeText(requireContext(), "请先创建行动", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val rowBinding = ItemQuestBehGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
+            val behAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableBehaviors.map { it.behavior.name })
+            behAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            rowBinding.spinnerBeh.adapter = behAdapter
+            rowBinding.btnRemove.setOnClickListener { dialogBinding.llGoalsContainer.removeView(rowBinding.root) }
+            rowBinding.root.tag = "beh"
+        }
+
+        dialogBinding.btnAddReward.setOnClickListener { addEffectRow(dialogBinding.llRewardsContainer, false) }
+        dialogBinding.btnAddPunishment.setOnClickListener { addEffectRow(dialogBinding.llPunishmentsContainer, true) }
+
+        dialogBinding.btnCancel.setOnClickListener { dialog.dismiss() }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            val name = dialogBinding.etName.text?.toString()?.trim()
+            if (name.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), "请输入任务名称", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val type = when (dialogBinding.spinnerType.selectedItemPosition) {
+                0 -> 0
+                1 -> 3
+                2 -> 1
+                else -> 2
+            }
+
+            if (type != 0 && type != 3 && selectedDeadline == null) {
+                Toast.makeText(requireContext(), "请选择截止日期", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val attrGoals = mutableListOf<QuestAttributeGoalEntity>()
+            val behGoals = mutableListOf<QuestBehaviorGoalEntity>()
+
+            for (i in 0 until dialogBinding.llGoalsContainer.childCount) {
+                val view = dialogBinding.llGoalsContainer.getChildAt(i)
+                if (view.tag == "attr") {
+                    val rb = ItemQuestAttrGoalBinding.bind(view)
+                    val pos = rb.spinnerAttr.selectedItemPosition
+                    val target = rb.etTargetVal.text.toString().toFloatOrNull()
+                    if (pos >= 0 && target != null && target > 0f) {
+                        attrGoals.add(QuestAttributeGoalEntity(questId = quest.id, attributeId = availableAttributes[pos].attribute.id, targetValue = target))
+                    }
+                } else if (view.tag == "beh") {
+                    val rb = ItemQuestBehGoalBinding.bind(view)
+                    val pos = rb.spinnerBeh.selectedItemPosition
+                    val target = rb.etTargetCount.text.toString().toIntOrNull()
+                    if (pos >= 0 && target != null && target > 0) {
+                        behGoals.add(QuestBehaviorGoalEntity(questId = quest.id, behaviorId = availableBehaviors[pos].behavior.id, targetCount = target, currentCount = questWithDetails.behaviorGoals.find { it.behaviorId == availableBehaviors[pos].behavior.id }?.currentCount ?: 0))
+                    }
+                }
+            }
+
+            if (attrGoals.isEmpty() && behGoals.isEmpty()) {
+                Toast.makeText(requireContext(), "请至少添加一个完成目标", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val effects = mutableListOf<QuestEffectEntity>()
+            
+            fun parseEffectsContainer(container: ViewGroup) {
+                for (i in 0 until container.childCount) {
+                    val view = container.getChildAt(i)
+                    val isPunish = view.tag as Boolean
+                    val rb = ItemQuestEffectBinding.bind(view)
+                    val effectType = rb.spinnerType.selectedItemPosition
+                    
+                    if (effectType == 0) {
+                        val pos = rb.spinnerAttr.selectedItemPosition
+                        val change = rb.etValChange.text.toString().toFloatOrNull()
+                        if (pos >= 0 && change != null && availableAttributes.isNotEmpty()) {
+                            effects.add(QuestEffectEntity(questId = quest.id, isPunishment = isPunish, type = 0, attributeId = availableAttributes[pos].attribute.id, valueChange = change))
+                        }
+                    } else {
+                        val text = rb.etTextDesc.text?.toString()?.trim()
+                        if (!text.isNullOrEmpty()) {
+                            effects.add(QuestEffectEntity(questId = quest.id, isPunishment = isPunish, type = 1, text = text))
+                        }
+                    }
+                }
+            }
+            
+            parseEffectsContainer(dialogBinding.llRewardsContainer)
+            parseEffectsContainer(dialogBinding.llPunishmentsContainer)
+
+            val updatedQuest = quest.copy(
+                name = name,
+                type = type,
+                deadline = selectedDeadline
+            )
+            
+            viewModel.updateQuestWithDetails(updatedQuest, attrGoals, behGoals, effects)
+            Toast.makeText(requireContext(), "任务已更新", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
         }
 

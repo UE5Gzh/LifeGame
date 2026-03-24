@@ -74,4 +74,8 @@ interface QuestDao {
     @Transaction
     @Query("SELECT * FROM quests WHERE status = 0")
     suspend fun getActiveQuestsWithDetails(): List<QuestWithDetails>
+
+    @Transaction
+    @Query("SELECT * FROM quests WHERE isFocused = 1 LIMIT 1")
+    fun getFocusedQuest(): Flow<QuestWithDetails?>
 }

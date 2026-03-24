@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearSmoothScroller
 import com.example.lifegame.data.entity.LogEntity
 import com.example.lifegame.databinding.FragmentLogBinding
 import com.example.lifegame.ui.base.BaseFragment
+import com.example.lifegame.util.LogExportHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -157,17 +158,40 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
             android.R.layout.select_dialog_item, null, false
         )
         
-        val options = arrayOf("日志存储设置", "任务日志默认锁定设置")
+        val options = arrayOf("导出日志", "日志存储设置", "任务日志默认锁定设置")
         
         MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
             .setTitle("日志设置")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> showStorageSettingsDialog()
-                    1 -> showDefaultLockSettingsDialog()
+                    0 -> exportLogs()
+                    1 -> showStorageSettingsDialog()
+                    2 -> showDefaultLockSettingsDialog()
                 }
             }
             .show()
+    }
+
+    private fun exportLogs() {
+        val logs = logAdapter.currentList
+        if (logs.isEmpty()) {
+            Toast.makeText(requireContext(), "没有日志可导出", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val file = LogExportHelper.exportLogsToCsv(requireContext(), logs)
+            if (file != null) {
+                MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                    .setTitle("导出成功")
+                    .setMessage("日志已导出到:\n${file.name}\n\n是否立即分享?")
+                    .setPositiveButton("分享") { _, _ ->
+                        LogExportHelper.shareFile(requireContext(), file)
+                    }
+                    .setNegativeButton("稍后", null)
+                    .show()
+            }
+        }
     }
 
     private fun showStorageSettingsDialog() {
@@ -216,7 +240,7 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
         cbWeekly.isChecked = settings["weekly"] ?: false
 
         MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle("任务日志默认锁定设置")
+            .setTitle("日志默认锁定设置")
             .setMessage("开启后，对应类型任务产生的日志将默认锁定，不会被自动清理。")
             .setView(dialogView)
             .setPositiveButton("保存") { _, _ ->

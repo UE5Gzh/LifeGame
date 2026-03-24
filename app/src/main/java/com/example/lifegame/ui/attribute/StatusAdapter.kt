@@ -70,9 +70,14 @@ class StatusAdapter(
             val effectInfoText = buildEffectInfoText(effects)
             binding.tvEffectInfo.text = effectInfoText
 
-            if (status.isEnabled && status.durationValue > 0) {
+            val isExpired = status.durationValue > 0 && isStatusExpired(status)
+            
+            if (status.isEnabled && status.durationValue > 0 && !isExpired) {
                 binding.tvNextTrigger.visibility = View.VISIBLE
                 binding.tvNextTrigger.text = calculateRemainingTime(status)
+            } else if (isExpired) {
+                binding.tvNextTrigger.visibility = View.VISIBLE
+                binding.tvNextTrigger.text = "已到期"
             } else {
                 binding.tvNextTrigger.visibility = View.GONE
             }
@@ -93,7 +98,7 @@ class StatusAdapter(
                 binding.switchEnabled.visibility = View.VISIBLE
                 
                 binding.switchEnabled.setOnCheckedChangeListener(null)
-                binding.switchEnabled.isChecked = status.isEnabled
+                binding.switchEnabled.isChecked = status.isEnabled && !isExpired
                 binding.switchEnabled.setOnCheckedChangeListener { _, isChecked ->
                     onStatusToggle(status, isChecked)
                 }
@@ -152,6 +157,19 @@ class StatusAdapter(
                 minutes > 0 -> "剩余${minutes}分钟"
                 else -> "即将到期"
             }
+        }
+
+        private fun isStatusExpired(status: StatusEntity): Boolean {
+            if (status.durationValue <= 0) return false
+            
+            val durationMillis = when (status.durationUnit) {
+                0 -> status.durationValue * 60 * 1000L
+                1 -> status.durationValue * 60 * 60 * 1000L
+                else -> status.durationValue * 24 * 60 * 60 * 1000L
+            }
+            
+            val elapsed = System.currentTimeMillis() - status.startTime
+            return elapsed >= durationMillis
         }
     }
 

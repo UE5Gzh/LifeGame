@@ -23,7 +23,10 @@ class ColorAdapter(
                 selectedPosition = index
             }
         }
-        onColorSelected(colors[selectedPosition])
+    }
+
+    fun getSelectedColor(): String {
+        return colors[selectedPosition]
     }
 
     inner class ColorViewHolder(val binding: ItemColorBinding) : RecyclerView.ViewHolder(binding.root) {

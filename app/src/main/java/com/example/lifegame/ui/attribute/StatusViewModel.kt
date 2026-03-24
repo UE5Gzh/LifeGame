@@ -96,7 +96,9 @@ class StatusViewModel @Inject constructor(
 
     fun toggleStatus(status: StatusEntity, enabled: Boolean) {
         viewModelScope.launch {
-            val updatedStatus = if (enabled) {
+            val isExpired = isStatusExpired(status)
+            
+            val updatedStatus = if (enabled && !isExpired) {
                 status.copy(
                     isEnabled = true,
                     startTime = System.currentTimeMillis()
@@ -106,11 +108,19 @@ class StatusViewModel @Inject constructor(
             }
             statusRepository.updateStatus(updatedStatus)
             
-            logRepository.insertLog(
-                type = "STATUS_TOGGLED",
-                title = if (enabled) "进入状态: ${status.name}" else "退出状态: ${status.name}",
-                details = ""
-            )
+            if (isExpired && status.isEnabled) {
+                logRepository.insertLog(
+                    type = "STATUS_EXPIRED",
+                    title = "状态到期: ${status.name}",
+                    details = "持续时间已结束，自动关闭"
+                )
+            } else {
+                logRepository.insertLog(
+                    type = "STATUS_TOGGLED",
+                    title = if (enabled && !isExpired) "进入状态: ${status.name}" else "退出状态: ${status.name}",
+                    details = ""
+                )
+            }
         }
     }
 

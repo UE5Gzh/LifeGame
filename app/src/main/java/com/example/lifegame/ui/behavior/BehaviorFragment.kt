@@ -1,7 +1,9 @@
 package com.example.lifegame.ui.behavior
 
 import android.content.Intent
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -29,6 +31,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @AndroidEntryPoint
 class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
@@ -245,6 +248,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         super.setupViews()
         
         setupRecyclerView()
+        setupGestureDetector()
 
         binding.btnAdd.setOnClickListener {
             showAddBehaviorDialog()
@@ -278,7 +282,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     }
 
     private fun setupTabLayout() {
-        currentSelectedGroupId = viewModel.selectedGroupId.value
         binding.tabGroups.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 currentSelectedGroupId = tab?.tag as? Long
@@ -331,14 +334,26 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             binding.tabGroups.addTab(uncatTab)
         }
 
-        // Restore selection
+        // Restore selection from saved preference
+        val savedGroupId = viewModel.selectedGroupId.value
         val tabCount = binding.tabGroups.tabCount
+        var found = false
+        
         for (i in 0 until tabCount) {
             val tab = binding.tabGroups.getTabAt(i)
-            if (tab?.tag == currentSelectedGroupId) {
+            if (tab?.tag == savedGroupId) {
                 tab?.select()
-                return
+                currentSelectedGroupId = savedGroupId
+                found = true
+                break
             }
+        }
+        
+        // If saved group no longer exists, default to "All"
+        if (!found) {
+            binding.tabGroups.getTabAt(0)?.select()
+            currentSelectedGroupId = null
+            viewModel.saveSelectedGroupId(null)
         }
     }
 
@@ -440,6 +455,44 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             }
         }
         itemTouchHelper = ItemTouchHelper(touchHelperCallback)
+    }
+
+    private lateinit var gestureDetector: GestureDetector
+
+    private fun setupGestureDetector() {
+        gestureDetector = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
+            private val SWIPE_THRESHOLD = 100
+            private val SWIPE_VELOCITY_THRESHOLD = 100
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if (e1 == null) return false
+                
+                val diffX = e2.x - e1.x
+                if (abs(diffX) > SWIPE_THRESHOLD && abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                    val tabCount = binding.tabGroups.tabCount
+                    val currentTab = binding.tabGroups.selectedTabPosition
+                    
+                    if (diffX > 0 && currentTab > 0) {
+                        binding.tabGroups.getTabAt(currentTab - 1)?.select()
+                        return true
+                    } else if (diffX < 0 && currentTab < tabCount - 1) {
+                        binding.tabGroups.getTabAt(currentTab + 1)?.select()
+                        return true
+                    }
+                }
+                return false
+            }
+        })
+        
+        binding.rvBehaviors.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
+            false
+        }
     }
 
     override fun observeData() {

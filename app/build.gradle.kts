@@ -14,8 +14,8 @@ android {
         applicationId = "com.example.lifegame"
         minSdk = 24
         targetSdk = 34
-        versionCode = 45
-        versionName = "1.4.1"
+        versionCode = 51
+        versionName = "1.4.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
