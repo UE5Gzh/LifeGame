@@ -7,10 +7,10 @@
     android:padding="24dp">
 
     <TextView
-        android:id="@+id/tv_dialog_title"
+        android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="日志存储设置"
+        android:text="设置最大精力值"
         android:textColor="@color/white"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -22,28 +22,26 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="设置最大日志存储数量"
+        android:text="设置每日可用的最大精力值"
         android:textColor="#888888"
         android:textSize="12sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_dialog_title" />
+        app:layout_constraintTop_toBottomOf="@id/tv_title" />
 
     <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/til_limit"
+        android:id="@+id/til_energy"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:hint="最大存储数量"
+        android:hint="最大精力值"
         android:textColorHint="#999999"
         app:boxStrokeColor="#666666"
-        app:counterEnabled="true"
-        app:counterMaxLength="5"
         app:hintTextColor="#CCCCCC"
         app:layout_constraintTop_toBottomOf="@id/tv_subtitle">
 
         <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/et_limit"
+            android:id="@+id/et_energy"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="number"
@@ -56,11 +54,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="范围: 50 - 50000，超出限制的未锁定日志将被自动清理"
+        android:text="建议范围: 50 - 500"
         android:textColor="#666666"
         android:textSize="12sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/til_limit" />
+        app:layout_constraintTop_toBottomOf="@id/til_energy" />
 
     <LinearLayout
         android:layout_width="match_parent"

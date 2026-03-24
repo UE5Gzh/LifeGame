@@ -22,6 +22,9 @@ interface LogDao {
     @Query("SELECT * FROM logs ORDER BY timestamp DESC")
     fun getAllLogs(): Flow<List<LogEntity>>
 
+    @Query("SELECT * FROM logs ORDER BY timestamp DESC LIMIT :limit OFFSET :offset")
+    fun getLogsPaged(limit: Int, offset: Int): Flow<List<LogEntity>>
+
     @Query("SELECT COUNT(*) FROM logs")
     suspend fun getLogCount(): Int
 

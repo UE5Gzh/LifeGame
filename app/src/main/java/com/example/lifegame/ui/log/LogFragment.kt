@@ -268,7 +268,7 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
             val inputStr = dialogBinding.etLimit.text.toString()
             val limit = inputStr.toIntOrNull()
             
-            if (limit != null && limit in 50..20000) {
+            if (limit != null && limit in 50..50000) {
                 viewModel.setMaxLogLimit(limit)
             }
             dialog.dismiss()

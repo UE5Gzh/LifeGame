@@ -21,6 +21,8 @@ import com.example.lifegame.data.entity.BehaviorGroupEntity
 import com.example.lifegame.databinding.DialogAddBehaviorBinding
 import com.example.lifegame.databinding.DialogAddGroupBinding
 import com.example.lifegame.databinding.DialogManageGroupsBinding
+import com.example.lifegame.databinding.DialogResetEnergyBinding
+import com.example.lifegame.databinding.DialogSetMaxEnergyBinding
 import com.example.lifegame.databinding.FragmentBehaviorBinding
 import com.example.lifegame.databinding.ItemBehaviorAttributeModifierBinding
 import com.example.lifegame.ui.base.BaseFragment
@@ -252,14 +254,21 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         }
 
         binding.btnResetEnergy.setOnClickListener {
-            MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                .setTitle("重置精力")
-                .setMessage("确定要将精力恢复到最大值吗？")
-                .setPositiveButton("确定") { _, _ ->
-                    viewModel.resetEnergy()
-                }
-                .setNegativeButton("取消", null)
-                .show()
+            val dialogBinding = DialogResetEnergyBinding.inflate(layoutInflater)
+            val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                .setView(dialogBinding.root)
+                .create()
+
+            dialogBinding.btnCancel.setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialogBinding.btnConfirm.setOnClickListener {
+                viewModel.resetEnergy()
+                dialog.dismiss()
+            }
+
+            dialog.show()
         }
 
         binding.cardEnergy.setOnLongClickListener {
@@ -380,23 +389,27 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     }
 
     private fun showSetMaxEnergyDialog() {
-        val editText = EditText(requireContext()).apply {
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setText(viewModel.maxEnergy.value.toString())
-            setSelection(text.length)
+        val dialogBinding = DialogSetMaxEnergyBinding.inflate(layoutInflater)
+        dialogBinding.etEnergy.setText(viewModel.maxEnergy.value.toString())
+        dialogBinding.etEnergy.setSelection(dialogBinding.etEnergy.text?.length ?: 0)
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
         }
 
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle("设置最大精力值")
-            .setView(editText)
-            .setPositiveButton("确定") { _, _ ->
-                val newMax = editText.text.toString().toIntOrNull()
-                if (newMax != null && newMax > 0) {
-                    viewModel.setMaxEnergy(newMax)
-                }
+        dialogBinding.btnConfirm.setOnClickListener {
+            val newMax = dialogBinding.etEnergy.text.toString().toIntOrNull()
+            if (newMax != null && newMax > 0) {
+                viewModel.setMaxEnergy(newMax)
             }
-            .setNegativeButton("取消", null)
-            .show()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun setupRecyclerView() {

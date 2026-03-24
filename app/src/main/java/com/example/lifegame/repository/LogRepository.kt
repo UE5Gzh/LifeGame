@@ -18,6 +18,10 @@ class LogRepository @Inject constructor(
 
     val allLogs: Flow<List<LogEntity>> = logDao.getAllLogs()
 
+    fun getLogsPaged(limit: Int, offset: Int): Flow<List<LogEntity>> {
+        return logDao.getLogsPaged(limit, offset)
+    }
+
     suspend fun insertLog(type: String, title: String, details: String, isLocked: Boolean = false) {
         val log = LogEntity(
             type = type,
@@ -56,7 +60,7 @@ class LogRepository @Inject constructor(
     }
 
     fun getMaxLogLimit(): Int {
-        return sharedPreferences.getInt("max_log_limit", 2000)
+        return sharedPreferences.getInt("max_log_limit", 50000)
     }
 
     fun setMaxLogLimit(limit: Int) {

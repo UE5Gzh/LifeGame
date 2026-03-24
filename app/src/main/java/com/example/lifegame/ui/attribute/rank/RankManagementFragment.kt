@@ -10,6 +10,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.lifegame.databinding.DialogAddRankBinding
+import com.example.lifegame.databinding.DialogRankOverlapBinding
 import com.example.lifegame.databinding.FragmentRankManagementBinding
 import com.example.lifegame.ui.base.BaseFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -102,17 +103,34 @@ class RankManagementFragment : BaseFragment<FragmentRankManagementBinding>() {
             }
 
             val currentRanks = viewModel.ranks.value
-            val hasOverlap = currentRanks.any { 
+            val overlappingRank = currentRanks.find { 
                 (minValue >= it.minValue && minValue <= it.maxValue) ||
                 (maxValue >= it.minValue && maxValue <= it.maxValue) ||
                 (minValue <= it.minValue && maxValue >= it.maxValue)
             }
 
-            if (hasOverlap) {
+            if (overlappingRank != null) {
+                dialog.dismiss()
+                showOverlapDialog(overlappingRank.name, overlappingRank.minValue, overlappingRank.maxValue, minValue, maxValue)
                 return@setOnClickListener
             }
 
             viewModel.addRank(name, minValue, maxValue)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showOverlapDialog(conflictName: String, conflictMin: Float, conflictMax: Float, newMin: Float, newMax: Float) {
+        val overlapBinding = DialogRankOverlapBinding.inflate(layoutInflater)
+        overlapBinding.tvConflictInfo.text = "新区间 [$newMin - $newMax] 与现有段位「$conflictName」[$conflictMin - $conflictMax] 存在重叠"
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(overlapBinding.root)
+            .create()
+
+        overlapBinding.btnConfirm.setOnClickListener {
             dialog.dismiss()
         }
 
