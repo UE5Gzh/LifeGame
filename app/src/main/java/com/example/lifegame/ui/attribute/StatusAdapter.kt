@@ -123,7 +123,11 @@ class StatusAdapter(
                 
                 when (effect.effectType) {
                     0 -> {
-                        val unitStr = if (effect.periodUnit == 0) "小时" else "天"
+                        val unitStr = when (effect.periodUnit) {
+                            0 -> "分钟"
+                            1 -> "小时"
+                            else -> "天"
+                        }
                         val sign = if (effect.changeValue >= 0) "+" else ""
                         "$prefix$attrName $sign${formatValue(effect.changeValue)}/$unitStr"
                     }
