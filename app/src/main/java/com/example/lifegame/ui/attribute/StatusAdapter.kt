@@ -1,6 +1,8 @@
 package com.example.lifegame.ui.attribute
 
 import android.graphics.Color
+import android.text.SpannableStringBuilder
+import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -117,12 +119,23 @@ class StatusAdapter(
             }
         }
 
-        private fun buildEffectInfoText(effects: List<StatusEffectEntity>): String {
-            if (effects.isEmpty()) return "无效果"
+        private fun buildEffectInfoText(effects: List<StatusEffectEntity>): SpannableStringBuilder {
+            val builder = SpannableStringBuilder()
+            if (effects.isEmpty()) {
+                builder.append("无效果")
+                return builder
+            }
             
-            return effects.mapIndexed { index, effect ->
-                val attrName = attributes.find { it.attribute.id == effect.targetAttributeId }?.attribute?.name ?: "未知属性"
-                val prefix = if (effects.size > 1) "${index + 1}. " else ""
+            effects.forEachIndexed { index, effect ->
+                val attr = attributes.find { it.attribute.id == effect.targetAttributeId }?.attribute
+                val attrName = attr?.name ?: "未知属性"
+                val attrColor = try {
+                    Color.parseColor(attr?.colorHex ?: "#FFFFFF")
+                } catch (e: Exception) {
+                    Color.WHITE
+                }
+                
+                if (index > 0) builder.append("\n")
                 
                 when (effect.effectType) {
                     0 -> {
@@ -132,12 +145,44 @@ class StatusAdapter(
                             else -> "天"
                         }
                         val sign = if (effect.changeValue >= 0) "+" else ""
-                        "$prefix$attrName $sign${formatValue(effect.changeValue)}/$unitStr"
+                        val valueStr = formatValue(effect.changeValue)
+                        
+                        val start = builder.length
+                        builder.append(attrName)
+                        builder.setSpan(
+                            ForegroundColorSpan(attrColor),
+                            start,
+                            builder.length,
+                            SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                        builder.append(" $sign$valueStr/$unitStr")
                     }
-                    1 -> "${prefix}获取$attrName +${formatValue(effect.bonusPercent)}%"
-                    else -> "${prefix}获取$attrName -${formatValue(effect.bonusPercent)}%"
+                    1 -> {
+                        val start = builder.length
+                        builder.append(attrName)
+                        builder.setSpan(
+                            ForegroundColorSpan(attrColor),
+                            start,
+                            builder.length,
+                            SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                        builder.append(" +${formatValue(effect.bonusPercent)}%")
+                    }
+                    else -> {
+                        val start = builder.length
+                        builder.append(attrName)
+                        builder.setSpan(
+                            ForegroundColorSpan(attrColor),
+                            start,
+                            builder.length,
+                            SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                        builder.append(" -${formatValue(effect.bonusPercent)}%")
+                    }
                 }
-            }.joinToString("\n")
+            }
+            
+            return builder
         }
 
         private fun calculateRemainingTime(status: StatusEntity): String {
