@@ -17,4 +17,8 @@
     <color name="attr_eq">#FF9800</color>
     <color name="attr_physique">#4CAF50</color>
     <color name="attr_pushup">#7986CB</color>
+    
+    <!-- Attribute change colors -->
+    <color name="attribute_positive">#4CAF50</color>
+    <color name="attribute_negative">#F44336</color>
 </resources>

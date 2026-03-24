@@ -227,10 +227,12 @@ class BehaviorViewModel @Inject constructor(
             sharedPreferences.edit().putInt("current_energy", newEnergy).apply()
 
             val detailsBuilder = StringBuilder()
+            val attributeChanges = mutableListOf<com.example.lifegame.util.AttributeChangeItem>()
 
             val currentAttributes = attributeRepository.allAttributesWithRanks.first()
             for (modifier in behaviorWithModifiers.modifiers) {
-                val attributeToUpdate = currentAttributes.find { it.attribute.id == modifier.attributeId }?.attribute
+                val attrWithRanks = currentAttributes.find { it.attribute.id == modifier.attributeId }
+                val attributeToUpdate = attrWithRanks?.attribute
                 if (attributeToUpdate != null) {
                     var actualChange = modifier.valueChange
                     
@@ -238,14 +240,27 @@ class BehaviorViewModel @Inject constructor(
                         actualChange = calculateFinalChangeForAttribute(modifier.attributeId, modifier.valueChange)
                     }
                     
-                    val newValue = attributeToUpdate.currentValue + actualChange
+                    val oldValue = attributeToUpdate.currentValue
+                    val newValue = oldValue + actualChange
                     attributeRepository.updateAttribute(attributeToUpdate.copy(currentValue = newValue))
                     if (detailsBuilder.isNotEmpty()) detailsBuilder.append(", ")
                     detailsBuilder.append("${attributeToUpdate.name} ${if(actualChange >= 0) "+" else ""}${formatValue(actualChange)}")
+                    
+                    attributeChanges.add(com.example.lifegame.util.AttributeChangeItem(attributeToUpdate.name, actualChange, attributeToUpdate.colorHex))
+                    
+                    if (attrWithRanks.ranks.isNotEmpty()) {
+                        checkRankUp(attributeToUpdate.name, oldValue, newValue, attrWithRanks.ranks)
+                    }
                 }
             }
 
-            questRepository.incrementBehaviorGoalCount(behavior.id)
+            val completedQuests = questRepository.incrementBehaviorGoalCountAndCheckCompletion(behavior.id, currentAttributes)
+            for (quest in completedQuests) {
+                com.example.lifegame.util.CelebrationBus.postQuestComplete(
+                    questName = quest.quest.name,
+                    questType = quest.quest.type
+                )
+            }
             
             val title = if (isFocus) "专注完成: ${behavior.name}" else "执行行动: ${behavior.name}"
             val details = if (detailsBuilder.isNotEmpty()) "属性变动: ${detailsBuilder.toString()}" else "无属性变动"
@@ -254,6 +269,37 @@ class BehaviorViewModel @Inject constructor(
                 title = title,
                 details = details
             )
+            
+            com.example.lifegame.util.AttributeChangeBus.postChanges(attributeChanges)
+        }
+    }
+    
+    private fun checkRankUp(attributeName: String, oldValue: Float, newValue: Float, ranks: List<com.example.lifegame.data.entity.RankEntity>) {
+        if (ranks.isEmpty()) return
+        if (newValue <= oldValue) return
+        
+        val sortedRanks = ranks.sortedBy { it.minValue }
+        
+        fun findRank(value: Float): com.example.lifegame.data.entity.RankEntity? {
+            return sortedRanks.find { value >= it.minValue && value < it.maxValue }
+                ?: if (value >= sortedRanks.last().maxValue) sortedRanks.last() else null
+        }
+        
+        val oldRank = findRank(oldValue)
+        val newRank = findRank(newValue)
+        
+        if (newRank != null && (oldRank == null || newRank.id != oldRank.id)) {
+            val oldRankIndex = oldRank?.let { sortedRanks.indexOf(it) } ?: -1
+            val newRankIndex = sortedRanks.indexOf(newRank)
+            
+            if (newRankIndex > oldRankIndex) {
+                val oldRankName = oldRank?.name ?: "无"
+                com.example.lifegame.util.CelebrationBus.postRankUp(
+                    attributeName = attributeName,
+                    oldRank = oldRankName,
+                    newRank = newRank.name
+                )
+            }
         }
     }
 

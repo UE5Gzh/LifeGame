@@ -6,7 +6,7 @@
         android:title="@string/nav_attribute" />
     <item
         android:id="@+id/behaviorFragment"
-        android:icon="@android:drawable/ic_menu_sort_by_size"
+        android:icon="@drawable/ic_behavior"
         android:title="@string/nav_behavior" />
     <item
         android:id="@+id/questFragment"

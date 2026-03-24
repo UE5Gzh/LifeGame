@@ -16,12 +16,13 @@ import java.util.Collections
 import kotlin.math.roundToInt
 
 class BehaviorAdapter(
-    private val onActionClick: (BehaviorWithModifiers) -> Unit,
+    private val onActionClick: (BehaviorWithModifiers, () -> Unit) -> Unit,
     private val onItemClick: (BehaviorWithModifiers) -> Unit,
     private val onItemLongClick: (BehaviorWithModifiers) -> Unit
 ) : ListAdapter<BehaviorWithModifiers, BehaviorAdapter.BehaviorViewHolder>(BehaviorDiffCallback()) {
 
     private var attributes: List<AttributeWithRanks> = emptyList()
+    private var loadingPosition: Int = -1
 
     var isSortMode = false
         set(value) {
@@ -51,7 +52,7 @@ class BehaviorAdapter(
     inner class BehaviorViewHolder(private val binding: ItemBehaviorBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: BehaviorWithModifiers) {
+        fun bind(item: BehaviorWithModifiers, isLoading: Boolean) {
             val behavior = item.behavior
             binding.tvName.text = behavior.name
 
@@ -102,28 +103,53 @@ class BehaviorAdapter(
 
             if (isSortMode) {
                 binding.ivDragHandle.visibility = View.VISIBLE
-                binding.btnAction.visibility = View.GONE
+                binding.btnActionContainer.visibility = View.GONE
                 binding.root.setOnClickListener(null)
                 binding.root.setOnLongClickListener(null)
             } else {
                 binding.ivDragHandle.visibility = View.GONE
-                binding.btnAction.visibility = View.VISIBLE
-                if (behavior.focusDuration == 0) {
-                    binding.btnAction.text = "执行"
+                binding.btnActionContainer.visibility = View.VISIBLE
+                
+                if (isLoading) {
+                    binding.btnAction.visibility = View.INVISIBLE
+                    binding.progressBar.visibility = View.VISIBLE
+                    binding.btnActionContainer.isEnabled = false
                 } else {
-                    binding.btnAction.text = "专注 ${behavior.focusDuration}m"
+                    binding.btnAction.visibility = View.VISIBLE
+                    binding.progressBar.visibility = View.GONE
+                    binding.btnActionContainer.isEnabled = true
+                    
+                    if (behavior.focusDuration == 0) {
+                        binding.btnAction.text = "执行"
+                    } else {
+                        binding.btnAction.text = "专注 ${behavior.focusDuration}m"
+                    }
                 }
 
                 binding.btnAction.setOnClickListener {
-                    onActionClick(item)
+                    if (!isLoading) {
+                        val position = adapterPosition
+                        if (position != RecyclerView.NO_POSITION) {
+                            loadingPosition = position
+                            notifyItemChanged(position)
+                            onActionClick(item) {
+                                loadingPosition = -1
+                                notifyItemChanged(position)
+                            }
+                        }
+                    }
                 }
 
                 binding.root.setOnClickListener {
-                    onItemClick(item)
+                    if (!isLoading) {
+                        onItemClick(item)
+                    }
                 }
 
                 binding.root.setOnLongClickListener {
-                    onItemLongClick(item)
+                    if (!isLoading) {
+                        onItemLongClick(item)
+                    }
                     true
                 }
             }
@@ -140,7 +166,7 @@ class BehaviorAdapter(
     }
 
     override fun onBindViewHolder(holder: BehaviorViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), position == loadingPosition)
     }
 }
 

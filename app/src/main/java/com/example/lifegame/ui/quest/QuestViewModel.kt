@@ -239,40 +239,93 @@ class QuestViewModel @Inject constructor(
         viewModelScope.launch {
             val currentAttrs = attributes.value
             val rewardDetails = StringBuilder()
+            val attributeChanges = mutableListOf<com.example.lifegame.util.AttributeChangeItem>()
             
             for (effect in questWithDetails.effects.filter { !it.isPunishment && it.type == 0 }) {
-                val attrToUpdate = currentAttrs.find { it.attribute.id == effect.attributeId }?.attribute
+                val attrWithRanks = currentAttrs.find { it.attribute.id == effect.attributeId }
+                val attrToUpdate = attrWithRanks?.attribute
                 if (attrToUpdate != null && effect.valueChange != null && effect.attributeId != null) {
                     var actualChange = effect.valueChange
                     if (effect.valueChange > 0) {
                         actualChange = calculateFinalChangeForAttribute(effect.attributeId!!, effect.valueChange)
                     }
-                    attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + actualChange))
+                    val oldValue = attrToUpdate.currentValue
+                    val newValue = oldValue + actualChange
+                    attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = newValue))
                     rewardDetails.append("${attrToUpdate.name} ${if(actualChange > 0) "+" else ""}${formatValue(actualChange)} ")
+                    attributeChanges.add(com.example.lifegame.util.AttributeChangeItem(attrToUpdate.name, actualChange, attrToUpdate.colorHex))
+                    
+                    if (attrWithRanks.ranks.isNotEmpty()) {
+                        checkRankUp(attrToUpdate.name, oldValue, newValue, attrWithRanks.ranks)
+                    }
                 }
             }
             questRepository.updateQuest(questWithDetails.quest.copy(status = 2, isFocused = false))
             
+            val questType = getTypeStr(questWithDetails.quest.type)
             logRepository.insertLogWithDefaultLock(
                 type = "QUEST_COMPLETION",
-                title = "完成${getTypeStr(questWithDetails.quest.type)}任务: ${questWithDetails.quest.name}",
+                title = "完成${questType}任务: ${questWithDetails.quest.name}",
                 details = if (rewardDetails.isEmpty()) "获得奖励: 无" else "获得奖励: $rewardDetails",
                 questType = questWithDetails.quest.type
             )
+            
+            com.example.lifegame.util.AttributeChangeBus.postChanges(attributeChanges)
+        }
+    }
+    
+    private fun checkRankUp(attributeName: String, oldValue: Float, newValue: Float, ranks: List<com.example.lifegame.data.entity.RankEntity>) {
+        if (ranks.isEmpty()) return
+        if (newValue <= oldValue) return
+        
+        val sortedRanks = ranks.sortedBy { it.minValue }
+        
+        fun findRank(value: Float): com.example.lifegame.data.entity.RankEntity? {
+            return sortedRanks.find { value >= it.minValue && value < it.maxValue }
+                ?: if (value >= sortedRanks.last().maxValue) sortedRanks.last() else null
+        }
+        
+        val oldRank = findRank(oldValue)
+        val newRank = findRank(newValue)
+        
+        if (newRank != null && (oldRank == null || newRank.id != oldRank.id)) {
+            val oldRankIndex = oldRank?.let { sortedRanks.indexOf(it) } ?: -1
+            val newRankIndex = sortedRanks.indexOf(newRank)
+            
+            if (newRankIndex > oldRankIndex) {
+                val oldRankName = oldRank?.name ?: "无"
+                com.example.lifegame.util.CelebrationBus.postRankUp(
+                    attributeName = attributeName,
+                    oldRank = oldRankName,
+                    newRank = newRank.name
+                )
+            }
         }
     }
 
     private suspend fun applyPunishments(questWithDetails: QuestWithDetails): String {
         val currentAttrs = attributes.value
         val punishmentDetails = StringBuilder()
+        val attributeChanges = mutableListOf<com.example.lifegame.util.AttributeChangeItem>()
         
         for (effect in questWithDetails.effects.filter { it.isPunishment && it.type == 0 }) {
-            val attrToUpdate = currentAttrs.find { it.attribute.id == effect.attributeId }?.attribute
+            val attrWithRanks = currentAttrs.find { it.attribute.id == effect.attributeId }
+            val attrToUpdate = attrWithRanks?.attribute
             if (attrToUpdate != null && effect.valueChange != null) {
-                attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = attrToUpdate.currentValue + effect.valueChange))
+                val oldValue = attrToUpdate.currentValue
+                val newValue = oldValue + effect.valueChange
+                attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = newValue))
                 punishmentDetails.append("${attrToUpdate.name} ${if(effect.valueChange > 0) "+" else ""}${formatValue(effect.valueChange)} ")
+                attributeChanges.add(com.example.lifegame.util.AttributeChangeItem(attrToUpdate.name, effect.valueChange, attrToUpdate.colorHex))
+                
+                if (attrWithRanks.ranks.isNotEmpty()) {
+                    checkRankUp(attrToUpdate.name, oldValue, newValue, attrWithRanks.ranks)
+                }
             }
         }
+        
+        com.example.lifegame.util.AttributeChangeBus.postChanges(attributeChanges)
+        
         return punishmentDetails.toString()
     }
 

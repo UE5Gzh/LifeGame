@@ -1,6 +1,7 @@
 package com.example.lifegame.repository
 
 import com.example.lifegame.data.dao.QuestDao
+import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.data.entity.QuestAttributeGoalEntity
 import com.example.lifegame.data.entity.QuestBehaviorGoalEntity
 import com.example.lifegame.data.entity.QuestEffectEntity
@@ -48,8 +49,45 @@ class QuestRepository @Inject constructor(
         questDao.deleteQuest(quest)
     }
 
-    suspend fun incrementBehaviorGoalCount(behaviorId: Long) {
+    suspend fun incrementBehaviorGoalCountAndCheckCompletion(
+        behaviorId: Long,
+        currentAttributes: List<AttributeWithRanks>
+    ): List<QuestWithDetails> {
         questDao.incrementBehaviorGoalCount(behaviorId)
+        
+        val activeQuests = questDao.getActiveQuestsWithDetails()
+        val completedQuests = mutableListOf<QuestWithDetails>()
+        
+        for (quest in activeQuests) {
+            if (isQuestComplete(quest, currentAttributes)) {
+                completedQuests.add(quest)
+            }
+        }
+        
+        return completedQuests
+    }
+    
+    private fun isQuestComplete(quest: QuestWithDetails, currentAttributes: List<AttributeWithRanks>): Boolean {
+        val totalGoals = quest.attributeGoals.size + quest.behaviorGoals.size
+        if (totalGoals == 0) return false
+
+        var completedGoals = 0
+
+        for (ag in quest.attributeGoals) {
+            val attr = currentAttributes.find { it.attribute.id == ag.attributeId }?.attribute
+            val currentVal = attr?.currentValue ?: 0f
+            if (currentVal >= ag.targetValue) {
+                completedGoals++
+            }
+        }
+
+        for (bg in quest.behaviorGoals) {
+            if (bg.currentCount >= bg.targetCount) {
+                completedGoals++
+            }
+        }
+
+        return completedGoals == totalGoals
     }
 
     suspend fun getActiveQuestsWithDetails(): List<QuestWithDetails> {

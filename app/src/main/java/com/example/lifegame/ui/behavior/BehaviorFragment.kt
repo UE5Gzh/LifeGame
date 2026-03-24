@@ -282,6 +282,8 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     }
 
     private fun setupTabLayout() {
+        currentSelectedGroupId = viewModel.selectedGroupId.value
+        
         binding.tabGroups.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 currentSelectedGroupId = tab?.tag as? Long
@@ -405,7 +407,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
 
     private fun setupRecyclerView() {
         adapter = BehaviorAdapter(
-            onActionClick = { behavior ->
+            onActionClick = { behavior, onComplete ->
                 if (!isSortMode) {
                     if (behavior.behavior.focusDuration > 0) {
                         val intent = Intent(requireContext(), com.example.lifegame.ui.focus.FocusActivity::class.java).apply {
@@ -414,10 +416,15 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                             putExtra("focus_duration", behavior.behavior.focusDuration)
                         }
                         focusLauncher.launch(intent)
+                        onComplete()
                     } else {
-                        viewModel.executeBehavior(behavior)
-                        Toast.makeText(requireContext(), "执行了: ${behavior.behavior.name}", Toast.LENGTH_SHORT).show()
+                        binding.rvBehaviors.postDelayed({
+                            viewModel.executeBehavior(behavior)
+                            onComplete()
+                        }, 600)
                     }
+                } else {
+                    onComplete()
                 }
             },
             onItemClick = { behavior ->

@@ -32,7 +32,7 @@
             android:textColor="@color/white"
             android:textSize="16sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/btnAction"
+            app:layout_constraintEnd_toStartOf="@id/btnActionContainer"
             app:layout_constraintStart_toEndOf="@id/ivDragHandle"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginStart="8dp"
@@ -46,23 +46,38 @@
             android:textColor="#A0A0A0"
             android:textSize="13sp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnAction"
+            app:layout_constraintEnd_toStartOf="@id/btnActionContainer"
             app:layout_constraintStart_toStartOf="@id/tvName"
             app:layout_constraintTop_toBottomOf="@id/tvName"
             android:layout_marginEnd="16dp"/>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAction"
+        <FrameLayout
+            android:id="@+id/btnActionContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:backgroundTint="#9C27B0"
-            android:minWidth="80dp"
-            android:text="执行"
-            android:textColor="@color/white"
-            app:cornerRadius="12dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAction"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#9C27B0"
+                android:minWidth="80dp"
+                android:text="执行"
+                android:textColor="@color/white"
+                app:cornerRadius="12dp" />
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:visibility="gone"
+                android:indeterminateTint="@color/white" />
+
+        </FrameLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>
