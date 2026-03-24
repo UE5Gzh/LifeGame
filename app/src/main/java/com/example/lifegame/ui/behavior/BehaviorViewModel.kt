@@ -294,15 +294,13 @@ class BehaviorViewModel @Inject constructor(
         val newRankIndex = findRankIndex(newValue)
         
         if (newRankIndex > oldRankIndex) {
-            for (i in (oldRankIndex + 1)..newRankIndex) {
-                val prevRank = if (i > 0) sortedRanks[i - 1].name else "无"
-                val currentRank = sortedRanks[i].name
-                com.example.lifegame.util.CelebrationBus.postRankUp(
-                    attributeName = attributeName,
-                    oldRank = prevRank,
-                    newRank = currentRank
-                )
-            }
+            val oldRankName = if (oldRankIndex >= 0) sortedRanks[oldRankIndex].name else "无"
+            val newRankName = sortedRanks[newRankIndex].name
+            com.example.lifegame.util.CelebrationBus.postRankUp(
+                attributeName = attributeName,
+                oldRank = oldRankName,
+                newRank = newRankName
+            )
         }
     }
 
