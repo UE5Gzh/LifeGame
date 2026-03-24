@@ -16,14 +16,14 @@ data class CelebrationEvent(
 
 enum class CelebrationType(val priority: Int) {
     RANK_UP(0),
-    MAIN_QUEST(1),
-    SIDE_QUEST(2),
-    WEEKLY_QUEST(3),
-    DAILY_QUEST(4)
+    DAILY_QUEST(1),
+    WEEKLY_QUEST(2),
+    MAIN_QUEST(3),
+    SIDE_QUEST(4)
 }
 
 object CelebrationBus {
-    private val _events = MutableSharedFlow<CelebrationEvent>(extraBufferCapacity = 16)
+    private val _events = MutableSharedFlow<CelebrationEvent>(replay = 16, extraBufferCapacity = 16)
     val events: SharedFlow<CelebrationEvent> = _events.asSharedFlow()
     
     fun postRankUp(attributeName: String, oldRank: String, newRank: String) {
