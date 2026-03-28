@@ -6,35 +6,26 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="8dp"
     android:layout_marginBottom="12dp"
-    app:cardBackgroundColor="#21212B"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="4dp"
-    app:strokeWidth="0dp">
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/background_dark"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp"
+    app:rippleColor="@color/purple_500">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/content_area"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:clickable="true"
-        android:focusable="true"
         android:background="?attr/selectableItemBackground">
-
-        <ImageView
-            android:id="@+id/iv_drag_handle"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_sort_by_size"
-            android:visibility="gone"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="#808080" />
 
         <View
             android:id="@+id/view_color_indicator"
             android:layout_width="4dp"
             android:layout_height="0dp"
-            android:background="#9C27B0"
+            android:background="@color/purple_500"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -45,8 +36,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:text="状态名称"
-            android:textColor="@color/white"
-            android:textSize="18sp"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toStartOf="@id/switch_enabled"
             app:layout_constraintStart_toEndOf="@id/view_color_indicator"
@@ -58,33 +49,42 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="状态描述"
-            android:textColor="#A0A0A0"
-            android:textSize="14sp"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="@id/tv_name"
             app:layout_constraintStart_toStartOf="@id/tv_name"
             app:layout_constraintTop_toBottomOf="@id/tv_name" />
 
-        <TextView
+        <!-- 效果信息卡片 -->
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/tv_effect_info"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:background="#3D3D4A"
-            android:padding="8dp"
-            android:text="效果信息"
-            android:textColor="#CCCCCC"
-            android:textSize="13sp"
+            app:cardBackgroundColor="@color/card_dark"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp"
             app:layout_constraintEnd_toEndOf="@id/tv_name"
             app:layout_constraintStart_toStartOf="@id/tv_name"
-            app:layout_constraintTop_toBottomOf="@id/tv_description" />
+            app:layout_constraintTop_toBottomOf="@id/tv_description">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="10dp"
+                android:text="效果信息"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:id="@+id/tv_duration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textColor="#888888"
+            android:textColor="@color/text_hint"
             android:textSize="12sp"
             android:visibility="gone"
             app:layout_constraintStart_toStartOf="@id/tv_name"
@@ -97,7 +97,7 @@
             android:layout_marginStart="12dp"
             android:layout_marginTop="8dp"
             android:text="下次触发时间"
-            android:textColor="#606060"
+            android:textColor="@color/text_hint"
             android:textSize="12sp"
             android:visibility="gone"
             app:layout_constraintStart_toEndOf="@id/tv_duration"
@@ -107,8 +107,8 @@
             android:id="@+id/switch_enabled"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:thumbTint="@color/white"
-            app:trackTint="@color/switch_track_color"
+            app:thumbTint="@color/purple_500"
+            app:trackTint="#444444"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 

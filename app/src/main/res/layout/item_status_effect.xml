@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
-    app:cardBackgroundColor="#2A2A3A"
-    app:cardCornerRadius="8dp">
+    app:cardBackgroundColor="@color/background_dark"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -24,7 +26,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="@color/white"
+                android:textColor="@color/text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
@@ -33,23 +35,23 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="删除效果"
                 android:src="@android:drawable/ic_menu_delete"
-                android:tint="#FF5252"
-                android:contentDescription="删除效果" />
-
+                app:tint="@color/attribute_negative" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="目标属性: "
-                android:textColor="#A0A0A0"
+                android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
             <Spinner
@@ -57,16 +59,16 @@
                 android:layout_width="0dp"
                 android:layout_height="36dp"
                 android:layout_weight="1"
-                android:background="@drawable/spinner_background"
-                android:popupBackground="@color/card_dark" />
-
+                android:background="@drawable/bg_spinner"
+                android:padding="8dp" />
         </LinearLayout>
 
+        <!-- 周期性参数 -->
         <LinearLayout
             android:id="@+id/ll_periodic_params"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
             android:orientation="vertical">
 
             <LinearLayout
@@ -74,51 +76,71 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
-                <EditText
-                    android:id="@+id/et_period_value"
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="0dp"
-                    android:layout_height="36dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/edit_text_background"
                     android:hint="周期值"
-                    android:inputType="number"
-                    android:paddingHorizontal="8dp"
-                    android:text="1"
-                    android:textColor="@color/white"
-                    android:textColorHint="#808080"
-                    android:textSize="12sp" />
+                    android:textColorHint="#666666"
+                    app:boxStrokeColor="@color/purple_500"
+                    app:hintTextColor="@color/purple_200"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusTopStart="8dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_period_value"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:text="1"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <Spinner
                     android:id="@+id/spinner_period_unit"
                     android:layout_width="0dp"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="4dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:background="@drawable/spinner_background"
-                    android:popupBackground="@color/card_dark" />
-
+                    android:background="@drawable/bg_spinner"
+                    android:padding="8dp" />
             </LinearLayout>
 
-            <EditText
-                android:id="@+id/et_change_value"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
-                android:layout_height="36dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/edit_text_background"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:hint="变动值（可正可负）"
-                android:inputType="numberDecimal|numberSigned"
-                android:paddingHorizontal="8dp"
-                android:textColor="@color/white"
-                android:textColorHint="#808080"
-                android:textSize="12sp" />
+                android:textColorHint="#666666"
+                app:boxStrokeColor="@color/purple_500"
+                app:hintTextColor="@color/purple_200"
+                app:boxCornerRadiusBottomEnd="8dp"
+                app:boxCornerRadiusBottomStart="8dp"
+                app:boxCornerRadiusTopEnd="8dp"
+                app:boxCornerRadiusTopStart="8dp">
 
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_change_value"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal|numberSigned"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp" />
+            </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
 
+        <!-- 加成参数 -->
         <LinearLayout
             android:id="@+id/ll_bonus_params"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
             android:visibility="gone">
 
@@ -126,37 +148,48 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="加成: "
-                android:textColor="#A0A0A0"
+                android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
-            <EditText
-                android:id="@+id/et_bonus_percent"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="0dp"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/edit_text_background"
-                android:hint="百分比 (0-100)"
-                android:inputType="numberDecimal"
-                android:paddingHorizontal="8dp"
-                android:textColor="@color/white"
-                android:textColorHint="#808080"
-                android:textSize="12sp" />
+                android:hint="百分比"
+                android:textColorHint="#666666"
+                app:boxStrokeColor="@color/purple_500"
+                app:hintTextColor="@color/purple_200"
+                app:boxCornerRadiusBottomEnd="8dp"
+                app:boxCornerRadiusBottomStart="8dp"
+                app:boxCornerRadiusTopEnd="8dp"
+                app:boxCornerRadiusTopStart="8dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_bonus_percent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="8dp"
                 android:text="%"
-                android:textColor="@color/white"
-                android:textSize="12sp" />
-
+                android:textColor="@color/text_primary"
+                android:textSize="14sp" />
         </LinearLayout>
 
+        <!-- 削减参数 -->
         <LinearLayout
             android:id="@+id/ll_decay_params"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
             android:visibility="gone">
 
@@ -164,32 +197,41 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="削减: "
-                android:textColor="#A0A0A0"
+                android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
-            <EditText
-                android:id="@+id/et_decay_percent"
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="0dp"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/edit_text_background"
-                android:hint="百分比 (0-100)"
-                android:inputType="numberDecimal"
-                android:paddingHorizontal="8dp"
-                android:textColor="@color/white"
-                android:textColorHint="#808080"
-                android:textSize="12sp" />
+                android:hint="百分比"
+                android:textColorHint="#666666"
+                app:boxStrokeColor="@color/purple_500"
+                app:hintTextColor="@color/purple_200"
+                app:boxCornerRadiusBottomEnd="8dp"
+                app:boxCornerRadiusBottomStart="8dp"
+                app:boxCornerRadiusTopEnd="8dp"
+                app:boxCornerRadiusTopStart="8dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_decay_percent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="8dp"
                 android:text="%"
-                android:textColor="@color/white"
-                android:textSize="12sp" />
-
+                android:textColor="@color/text_primary"
+                android:textSize="14sp" />
         </LinearLayout>
 
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>
