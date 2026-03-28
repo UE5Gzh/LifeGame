@@ -4,24 +4,26 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#2B2B36">
+    android:background="@color/card_dark">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="20dp">
 
+        <!-- 标题区域 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
 
             <View
                 android:layout_width="4dp"
                 android:layout_height="24dp"
-                android:background="#9C27B0" />
+                android:background="@color/purple_500" />
 
             <TextView
                 android:id="@+id/tv_quest_name"
@@ -29,122 +31,146 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:layout_weight="1"
-                android:textColor="@color/white"
-                android:textSize="22sp"
+                android:textColor="@color/text_primary"
+                android:textSize="20sp"
                 android:textStyle="bold"
+                android:maxLines="2"
+                android:ellipsize="end"
                 tools:text="跑步达人" />
 
             <TextView
                 android:id="@+id/tv_quest_type"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
                 android:background="@drawable/bg_quest_type_tag"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="4dp"
-                android:textColor="@color/white"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:textColor="@color/text_primary"
                 android:textSize="12sp"
                 tools:text="日常" />
-
         </LinearLayout>
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <!-- 完成目标卡片 -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:background="#3D3D4A"
-            android:padding="16dp">
-
-            <TextView
-                android:id="@+id/tv_section_goals"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="完成目标"
-                android:textColor="#9C27B0"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+            app:cardBackgroundColor="@color/background_dark"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp">
 
             <LinearLayout
-                android:id="@+id/ll_goals_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
                 android:orientation="vertical"
-                app:layout_constraintTop_toBottomOf="@id/tv_section_goals" />
+                android:padding="16dp">
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="完成目标"
+                    android:textColor="@color/purple_200"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.1" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+                <LinearLayout
+                    android:id="@+id/ll_goals_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 任务奖励卡片 -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="#3D3D4A"
-            android:padding="16dp">
-
-            <TextView
-                android:id="@+id/tv_section_rewards"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="任务奖励"
-                android:textColor="#4CAF50"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+            app:cardBackgroundColor="@color/background_dark"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp">
 
             <LinearLayout
-                android:id="@+id/ll_rewards_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
                 android:orientation="vertical"
-                app:layout_constraintTop_toBottomOf="@id/tv_section_rewards" />
+                android:padding="16dp">
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="任务奖励"
+                    android:textColor="@color/attribute_positive"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.1" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+                <LinearLayout
+                    android:id="@+id/ll_rewards_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 任务惩罚卡片 -->
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/section_punishments"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="#3D3D4A"
-            android:padding="16dp"
             android:visibility="gone"
+            app:cardBackgroundColor="@color/background_dark"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp"
             tools:visibility="visible">
 
-            <TextView
-                android:id="@+id/tv_section_punishments"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="任务惩罚"
-                android:textColor="#F44336"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
             <LinearLayout
-                android:id="@+id/ll_punishments_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
                 android:orientation="vertical"
-                app:layout_constraintTop_toBottomOf="@id/tv_section_punishments" />
+                android:padding="16dp">
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="任务惩罚"
+                    android:textColor="@color/attribute_negative"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.1" />
 
-        <TextView
+                <LinearLayout
+                    android:id="@+id/ll_punishments_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 底部关闭按钮 -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_close"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:layout_marginTop="20dp"
-            android:background="#3D3D4A"
-            android:gravity="center"
-            android:padding="14dp"
             android:text="关闭"
-            android:textColor="@color/white"
-            android:textSize="16sp" />
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            app:cornerRadius="8dp"
+            app:backgroundTint="@color/background_dark"
+            app:strokeWidth="0dp"
+            style="@style/Widget.MaterialComponents.Button" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

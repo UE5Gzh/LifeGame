@@ -513,6 +513,11 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         var selectedDeadline: Long? = null
 
+        // 设置任务类型Spinner适配器
+        val questTypeAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, listOf("日常", "周常", "主线", "支线"))
+        questTypeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+        dialogBinding.spinnerType.adapter = questTypeAdapter
+
         dialogBinding.spinnerType.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (position == 0 || position == 1) {
@@ -548,8 +553,8 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 return@setOnClickListener
             }
             val rowBinding = ItemQuestAttrGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
-            val attrAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableAttributes.map { it.attribute.name })
-            attrAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val attrAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, availableAttributes.map { it.attribute.name })
+            attrAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             rowBinding.spinnerAttr.adapter = attrAdapter
             rowBinding.btnRemove.setOnClickListener { dialogBinding.llGoalsContainer.removeView(rowBinding.root) }
             rowBinding.root.tag = "attr"
@@ -560,8 +565,8 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 return@setOnClickListener
             }
             val rowBinding = ItemQuestBehGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
-            val behAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableBehaviors.map { it.behavior.name })
-            behAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val behAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, availableBehaviors.map { it.behavior.name })
+            behAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             rowBinding.spinnerBeh.adapter = behAdapter
             rowBinding.btnRemove.setOnClickListener { dialogBinding.llGoalsContainer.removeView(rowBinding.root) }
             rowBinding.root.tag = "beh"
@@ -570,13 +575,13 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         fun addEffectRow(container: ViewGroup, isPunishment: Boolean) {
             val rowBinding = ItemQuestEffectBinding.inflate(layoutInflater, container, true)
             
-            val typeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, listOf("属性变动", "文本描述"))
-            typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val typeAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, listOf("属性变动", "文本描述"))
+            typeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             rowBinding.spinnerType.adapter = typeAdapter
 
             if (availableAttributes.isNotEmpty()) {
-                val attrAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableAttributes.map { it.attribute.name })
-                attrAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                val attrAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, availableAttributes.map { it.attribute.name })
+                attrAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                 rowBinding.spinnerAttr.adapter = attrAdapter
             }
 
@@ -689,6 +694,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(dialogBinding.root)
 
+        dialogBinding.tvDialogTitle.text = "编辑任务"
         dialogBinding.etName.setText(quest.name)
         dialogBinding.spinnerType.setSelection(when (quest.type) {
             0 -> 0
@@ -701,6 +707,11 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         val availableBehaviors = viewModel.behaviors.value
 
         var selectedDeadline: Long? = quest.deadline
+
+        // 设置任务类型Spinner适配器
+        val questTypeAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, listOf("日常", "周常", "主线", "支线"))
+        questTypeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+        dialogBinding.spinnerType.adapter = questTypeAdapter
 
         if (quest.deadline != null) {
             dialogBinding.tvDeadlineLabel.visibility = View.VISIBLE
@@ -745,8 +756,8 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         questWithDetails.attributeGoals.forEach { goal ->
             val rowBinding = ItemQuestAttrGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
-            val attrAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableAttributes.map { it.attribute.name })
-            attrAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val attrAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, availableAttributes.map { it.attribute.name })
+            attrAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             rowBinding.spinnerAttr.adapter = attrAdapter
             val attrIndex = availableAttributes.indexOfFirst { it.attribute.id == goal.attributeId }
             if (attrIndex >= 0) rowBinding.spinnerAttr.setSelection(attrIndex)
@@ -757,8 +768,8 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         questWithDetails.behaviorGoals.forEach { goal ->
             val rowBinding = ItemQuestBehGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
-            val behAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableBehaviors.map { it.behavior.name })
-            behAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val behAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, availableBehaviors.map { it.behavior.name })
+            behAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             rowBinding.spinnerBeh.adapter = behAdapter
             val behIndex = availableBehaviors.indexOfFirst { it.behavior.id == goal.behaviorId }
             if (behIndex >= 0) rowBinding.spinnerBeh.setSelection(behIndex)
@@ -770,13 +781,13 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         fun addEffectRow(container: ViewGroup, isPunishment: Boolean, existingEffect: QuestEffectEntity? = null) {
             val rowBinding = ItemQuestEffectBinding.inflate(layoutInflater, container, true)
             
-            val typeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, listOf("属性变动", "文本描述"))
-            typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val typeAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, listOf("属性变动", "文本描述"))
+            typeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             rowBinding.spinnerType.adapter = typeAdapter
 
             if (availableAttributes.isNotEmpty()) {
-                val attrAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableAttributes.map { it.attribute.name })
-                attrAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                val attrAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, availableAttributes.map { it.attribute.name })
+                attrAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
                 rowBinding.spinnerAttr.adapter = attrAdapter
             }
 
@@ -821,8 +832,8 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 return@setOnClickListener
             }
             val rowBinding = ItemQuestAttrGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
-            val attrAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableAttributes.map { it.attribute.name })
-            attrAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val attrAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, availableAttributes.map { it.attribute.name })
+            attrAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             rowBinding.spinnerAttr.adapter = attrAdapter
             rowBinding.btnRemove.setOnClickListener { dialogBinding.llGoalsContainer.removeView(rowBinding.root) }
             rowBinding.root.tag = "attr"
@@ -833,8 +844,8 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
                 return@setOnClickListener
             }
             val rowBinding = ItemQuestBehGoalBinding.inflate(layoutInflater, dialogBinding.llGoalsContainer, true)
-            val behAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, availableBehaviors.map { it.behavior.name })
-            behAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val behAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item, availableBehaviors.map { it.behavior.name })
+            behAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             rowBinding.spinnerBeh.adapter = behAdapter
             rowBinding.btnRemove.setOnClickListener { dialogBinding.llGoalsContainer.removeView(rowBinding.root) }
             rowBinding.root.tag = "beh"

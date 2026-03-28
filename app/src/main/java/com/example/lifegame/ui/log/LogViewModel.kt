@@ -52,6 +52,12 @@ class LogViewModel @Inject constructor(
         }
     }
 
+    fun updateLog(log: LogEntity) {
+        viewModelScope.launch {
+            logRepository.updateLog(log)
+        }
+    }
+
     fun getMaxLogLimit(): Int {
         return logRepository.getMaxLogLimit()
     }

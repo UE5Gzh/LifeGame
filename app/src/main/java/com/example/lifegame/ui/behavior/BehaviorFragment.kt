@@ -130,10 +130,10 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         
         val groupAdapter = ArrayAdapter(
             requireContext(),
-            android.R.layout.simple_spinner_item,
+            R.layout.spinner_item,
             groupNames
         )
-        groupAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        groupAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
         dialogBinding.spinnerGroup.adapter = groupAdapter
 
         val behavior = behaviorWithModifiers.behavior
@@ -172,10 +172,10 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
 
             val adapter = ArrayAdapter(
                 requireContext(),
-                android.R.layout.simple_spinner_item,
+                R.layout.spinner_item,
                 availableAttributes.map { it.attribute.name }
             )
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             rowBinding.spinnerAttribute.adapter = adapter
 
             if (preSelectedAttributeId != null) {
@@ -676,10 +676,10 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         
         val groupAdapter = ArrayAdapter(
             requireContext(),
-            android.R.layout.simple_spinner_item,
+            R.layout.spinner_item,
             groupNames
         )
-        groupAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        groupAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
         dialogBinding.spinnerGroup.adapter = groupAdapter
 
         // set default group to current selected if not "All"
@@ -704,10 +704,10 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
 
             val adapter = ArrayAdapter(
                 requireContext(),
-                android.R.layout.simple_spinner_item,
+                R.layout.spinner_item,
                 availableAttributes.map { it.attribute.name }
             )
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
             rowBinding.spinnerAttribute.adapter = adapter
 
             rowBinding.btnRemove.setOnClickListener {
