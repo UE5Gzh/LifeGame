@@ -1,80 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#2B2B36"
-    android:padding="24dp">
+    android:background="@color/card_dark"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingTop="24dp"
+    android:paddingBottom="20dp"
+    android:paddingHorizontal="20dp">
 
+    <!-- 图标 -->
     <ImageView
         android:id="@+id/iv_icon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:src="@android:drawable/ic_dialog_alert"
-        android:tint="#FF6B6B"
         android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:tint="@color/attribute_negative" />
 
+    <!-- 标题 -->
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:text="确认操作"
-        android:textColor="@color/white"
+        android:textColor="@color/text_primary"
         android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_icon" />
+        android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/tv_message"
+    <!-- 消息内容卡片 -->
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:text="确定要执行此操作吗？"
-        android:textColor="#CCCCCC"
-        android:textSize="16sp"
-        app:layout_constraintTop_toBottomOf="@id/tv_title" />
+        android:layout_marginTop="20dp"
+        app:cardBackgroundColor="@color/background_dark"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp">
 
+        <TextView
+            android:id="@+id/tv_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="16dp"
+            android:text="确定要执行此操作吗？"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp"
+            android:lineSpacingExtra="4dp" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 按钮区域 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:gravity="center"
-        android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@id/tv_message">
+        android:orientation="horizontal">
 
-        <TextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_cancel"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:background="#3D3D4A"
-            android:gravity="center"
-            android:padding="14dp"
             android:text="取消"
-            android:textColor="#CCCCCC"
-            android:textSize="16sp" />
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp"
+            app:cornerRadius="8dp"
+            app:backgroundTint="@color/background_dark"
+            style="@style/Widget.MaterialComponents.Button.TextButton" />
 
-        <TextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_confirm"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:background="#FF6B6B"
-            android:gravity="center"
-            android:padding="14dp"
             android:text="确定"
             android:textColor="@color/white"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:cornerRadius="8dp"
+            app:backgroundTint="@color/attribute_negative"
+            style="@style/Widget.MaterialComponents.Button" />
     </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>
