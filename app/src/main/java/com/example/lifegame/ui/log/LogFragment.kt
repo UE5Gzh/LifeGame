@@ -94,22 +94,30 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
         val dialogBinding = DialogOptionsBinding.inflate(LayoutInflater.from(requireContext()))
         dialogBinding.tvTitle.text = "日志操作"
         
-        dialogBinding.btnOption1.text = "删除此日志"
-        dialogBinding.btnOption1.visibility = View.VISIBLE
-        
-        dialogBinding.btnOption2.text = lockText
-        dialogBinding.btnOption2.visibility = View.VISIBLE
+        dialogBinding.btnOption1.text = "编辑日志"
+        dialogBinding.cardOption1.visibility = View.VISIBLE
+
+        dialogBinding.btnOption2.text = "删除此日志"
+        dialogBinding.cardOption2.visibility = View.VISIBLE
+
+        dialogBinding.btnOption3.text = lockText
+        dialogBinding.cardOption3.visibility = View.VISIBLE
 
         val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
             .setView(dialogBinding.root)
             .create()
 
-        dialogBinding.btnOption1.setOnClickListener {
+        dialogBinding.cardOption1.setOnClickListener {
+            showEditLogDialog(log)
+            dialog.dismiss()
+        }
+
+        dialogBinding.cardOption2.setOnClickListener {
             viewModel.deleteLog(log)
             dialog.dismiss()
         }
 
-        dialogBinding.btnOption2.setOnClickListener {
+        dialogBinding.cardOption3.setOnClickListener {
             viewModel.toggleLogLock(log)
             dialog.dismiss()
         }
@@ -138,6 +146,36 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
             val content = dialogBinding.etContent.text.toString().trim()
             if (content.isNotEmpty()) {
                 viewModel.insertCustomLog(content)
+            }
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showEditLogDialog(log: LogEntity) {
+        val dialogBinding = DialogWriteLogBinding.inflate(LayoutInflater.from(requireContext()))
+        val dateFormat = SimpleDateFormat("yyyy年MM月dd日 EEEE", Locale.CHINESE)
+        
+        dialogBinding.tvDialogTitle.text = "编辑日志"
+        dialogBinding.tvDate.text = dateFormat.format(Date(log.timestamp))
+        dialogBinding.etContent.setText(log.details)
+        dialogBinding.etContent.setSelection(log.details.length)
+        dialogBinding.tvHint.text = if (log.isLocked) "日志已锁定" else "日志未锁定"
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            val newContent = dialogBinding.etContent.text.toString().trim()
+            if (newContent.isNotEmpty()) {
+                val updatedLog = log.copy(details = newContent)
+                viewModel.updateLog(updatedLog)
             }
             dialog.dismiss()
         }
@@ -206,29 +244,29 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
         dialogBinding.tvTitle.text = "日志设置"
         
         dialogBinding.btnOption1.text = "导出日志"
-        dialogBinding.btnOption1.visibility = View.VISIBLE
-        
+        dialogBinding.cardOption1.visibility = View.VISIBLE
+
         dialogBinding.btnOption2.text = "日志存储设置"
-        dialogBinding.btnOption2.visibility = View.VISIBLE
-        
+        dialogBinding.cardOption2.visibility = View.VISIBLE
+
         dialogBinding.btnOption3.text = "任务日志默认锁定设置"
-        dialogBinding.btnOption3.visibility = View.VISIBLE
+        dialogBinding.cardOption3.visibility = View.VISIBLE
 
         val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
             .setView(dialogBinding.root)
             .create()
 
-        dialogBinding.btnOption1.setOnClickListener {
+        dialogBinding.cardOption1.setOnClickListener {
             exportLogs()
             dialog.dismiss()
         }
 
-        dialogBinding.btnOption2.setOnClickListener {
+        dialogBinding.cardOption2.setOnClickListener {
             showStorageSettingsDialog()
             dialog.dismiss()
         }
 
-        dialogBinding.btnOption3.setOnClickListener {
+        dialogBinding.cardOption3.setOnClickListener {
             showDefaultLockSettingsDialog()
             dialog.dismiss()
         }
