@@ -248,38 +248,38 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         val quest = questWithDetails.quest
         val dialogBinding = DialogQuestOptionsBinding.inflate(layoutInflater)
         
-        dialogBinding.btnInstantComplete.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
-        dialogBinding.btnGiveUp.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
-        dialogBinding.btnEdit.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
-        dialogBinding.btnFocus.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
+        dialogBinding.cardInstantComplete.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
+        dialogBinding.cardGiveUp.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
+        dialogBinding.cardEdit.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
+        dialogBinding.cardFocus.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
         dialogBinding.btnFocus.text = if (quest.isFocused) "取消关注" else "设为关注任务"
-        dialogBinding.btnDelete.visibility = View.VISIBLE
+        dialogBinding.cardDelete.visibility = View.VISIBLE
 
         val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
             .setView(dialogBinding.root)
             .create()
 
-        dialogBinding.btnInstantComplete.setOnClickListener {
+        dialogBinding.cardInstantComplete.setOnClickListener {
             showInstantCompleteConfirmDialog(questWithDetails)
             dialog.dismiss()
         }
 
-        dialogBinding.btnGiveUp.setOnClickListener {
+        dialogBinding.cardGiveUp.setOnClickListener {
             showGiveUpConfirmDialog(questWithDetails)
             dialog.dismiss()
         }
 
-        dialogBinding.btnEdit.setOnClickListener {
+        dialogBinding.cardEdit.setOnClickListener {
             showEditQuestDialog(questWithDetails)
             dialog.dismiss()
         }
 
-        dialogBinding.btnFocus.setOnClickListener {
+        dialogBinding.cardFocus.setOnClickListener {
             viewModel.toggleQuestFocus(quest)
             dialog.dismiss()
         }
 
-        dialogBinding.btnDelete.setOnClickListener {
+        dialogBinding.cardDelete.setOnClickListener {
             showDeleteConfirmDialog(quest)
             dialog.dismiss()
         }
