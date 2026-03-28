@@ -5,14 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
-    android:background="#2B2B36"
+    android:background="@color/card_dark"
     android:padding="12dp">
 
     <TextView
         android:id="@+id/tv_goal_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/white"
+        android:textColor="@color/text_primary"
         android:textSize="14sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -22,7 +22,7 @@
         android:id="@+id/tv_goal_progress_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#A0A0A0"
+        android:textColor="@color/text_secondary"
         android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -33,9 +33,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        app:indicatorColor="#9C27B0"
+        app:indicatorColor="@color/purple_500"
         app:layout_constraintTop_toBottomOf="@id/tv_goal_name"
-        app:trackColor="#404040"
+        app:trackColor="@color/background_dark"
         app:trackCornerRadius="2dp"
         app:trackThickness="4dp" />
 
@@ -44,7 +44,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:textColor="#888888"
+        android:textColor="@color/text_hint"
         android:textSize="11sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/pb_goal_progress"

@@ -59,7 +59,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_attachment"
+                android:src="@drawable/ic_behavior"
                 app:tint="@color/purple_200" />
 
             <TextView

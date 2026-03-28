@@ -12,7 +12,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:backgroundTint="@android:color/white"
+        android:backgroundTint="@color/text_primary"
         android:minHeight="48dp" />
 
     <com.google.android.material.textfield.TextInputLayout
@@ -20,14 +20,14 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         app:hintEnabled="false"
-        app:boxStrokeColor="#A0A0A0"
+        app:boxStrokeColor="@color/purple_500"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etValueChange"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
+            android:textColor="@color/text_primary"
             android:inputType="numberSigned"
             android:text="1"
             android:textAlignment="center" />
@@ -40,6 +40,6 @@
         android:layout_marginStart="8dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@android:drawable/ic_delete"
-        app:tint="#A0A0A0"
+        app:tint="@color/attribute_negative"
         android:contentDescription="删除" />
 </LinearLayout>

@@ -6,7 +6,9 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
     app:cardBackgroundColor="@color/card_dark"
-    app:cardCornerRadius="8dp">
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -17,7 +19,7 @@
             android:id="@+id/tv_rank_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
+            android:textColor="@color/text_primary"
             android:textSize="16sp"
             app:layout_constraintEnd_toStartOf="@id/tv_rank_range"
             app:layout_constraintStart_toStartOf="parent"
@@ -44,7 +46,7 @@
             app:layout_constraintBottom_toBottomOf="@id/tv_rank_name"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/tv_rank_name"
-            app:tint="#D32F2F" />
+            app:tint="@color/attribute_negative" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

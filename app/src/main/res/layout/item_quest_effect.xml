@@ -16,8 +16,8 @@
             android:id="@+id/spinnerType"
             android:layout_width="100dp"
             android:layout_height="40dp"
-            android:background="@drawable/spinner_background"
-            android:popupBackground="#2B2B36" />
+            android:background="@drawable/bg_spinner"
+            android:popupBackground="@color/card_dark" />
 
         <LinearLayout
             android:id="@+id/llAttrChange"
@@ -33,23 +33,23 @@
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="1"
-                android:background="@drawable/spinner_background"
-                android:popupBackground="#2B2B36" />
+                android:background="@drawable/bg_spinner"
+                android:popupBackground="@color/card_dark" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="80dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 app:hintEnabled="false"
-                app:boxStrokeColor="#666666"
-                app:boxBackgroundColor="#2A2A3A"
+                app:boxStrokeColor="@color/purple_500"
+                app:boxBackgroundColor="@color/background_dark"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etValChange"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/white"
+                    android:textColor="@color/text_primary"
                     android:inputType="numberSigned"
                     android:textAlignment="center"
                     android:textSize="14sp" />
@@ -63,8 +63,8 @@
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             app:hintEnabled="false"
-            app:boxStrokeColor="#666666"
-            app:boxBackgroundColor="#2A2A3A"
+            app:boxStrokeColor="@color/purple_500"
+            app:boxBackgroundColor="@color/background_dark"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:visibility="gone">
 
@@ -72,10 +72,10 @@
                 android:id="@+id/etTextDesc"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/white"
+                android:textColor="@color/text_primary"
                 android:inputType="text"
                 android:hint="描述..."
-                android:textColorHint="#808080"/>
+                android:textColorHint="@color/text_hint"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <ImageButton
@@ -85,6 +85,6 @@
             android:layout_marginStart="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@android:drawable/ic_delete"
-            app:tint="#FF6B6B" />
+            app:tint="@color/attribute_negative" />
     </LinearLayout>
 </LinearLayout>

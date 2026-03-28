@@ -4,9 +4,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    app:cardBackgroundColor="#21212B"
-    app:cardCornerRadius="16dp"
-    app:strokeWidth="0dp">
+    app:cardBackgroundColor="@color/background_dark"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp"
+    app:rippleColor="@color/purple_500">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -43,7 +45,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textColor="#A0A0A0"
+            android:textColor="@color/text_secondary"
             android:textSize="13sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/btnActionContainer"
@@ -63,7 +65,7 @@
                 android:id="@+id/btnAction"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:backgroundTint="#9C27B0"
+                app:backgroundTint="@color/purple_500"
                 android:minWidth="80dp"
                 android:text="执行"
                 android:textColor="@color/white"
