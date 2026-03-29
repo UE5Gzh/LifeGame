@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
 import com.example.lifegame.data.entity.LogEntity
 import com.example.lifegame.databinding.DialogConfirmBinding
+import com.example.lifegame.databinding.DialogAppSettingsBinding
 import com.example.lifegame.databinding.DialogDefaultLockSettingsBinding
 import com.example.lifegame.databinding.DialogExportSuccessBinding
 import com.example.lifegame.databinding.DialogOptionsBinding
@@ -240,33 +241,28 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
     }
 
     private fun showSettingsDialog() {
-        val dialogBinding = DialogOptionsBinding.inflate(LayoutInflater.from(requireContext()))
-        dialogBinding.tvTitle.text = "日志设置"
-        
-        dialogBinding.btnOption1.text = "导出日志"
-        dialogBinding.cardOption1.visibility = View.VISIBLE
-
-        dialogBinding.btnOption2.text = "日志存储设置"
-        dialogBinding.cardOption2.visibility = View.VISIBLE
-
-        dialogBinding.btnOption3.text = "任务日志默认锁定设置"
-        dialogBinding.cardOption3.visibility = View.VISIBLE
-
+        val dialogBinding = DialogAppSettingsBinding.inflate(LayoutInflater.from(requireContext()))
         val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
             .setView(dialogBinding.root)
             .create()
 
-        dialogBinding.cardOption1.setOnClickListener {
+        // 设置状态触发日志开关
+        dialogBinding.switchStatusLog.isChecked = viewModel.isStatusTriggerLogEnabled()
+        dialogBinding.switchStatusLog.setOnCheckedChangeListener { _, isChecked ->
+            viewModel.setStatusTriggerLogEnabled(isChecked)
+        }
+
+        dialogBinding.btnExport.setOnClickListener {
             exportLogs()
             dialog.dismiss()
         }
 
-        dialogBinding.cardOption2.setOnClickListener {
+        dialogBinding.btnStorage.setOnClickListener {
             showStorageSettingsDialog()
             dialog.dismiss()
         }
 
-        dialogBinding.cardOption3.setOnClickListener {
+        dialogBinding.btnDefaultLock.setOnClickListener {
             showDefaultLockSettingsDialog()
             dialog.dismiss()
         }

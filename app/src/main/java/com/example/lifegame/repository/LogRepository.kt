@@ -97,4 +97,12 @@ class LogRepository @Inject constructor(
             "weekly" to getDefaultLockForQuestType(3)
         )
     }
+
+    fun isStatusTriggerLogEnabled(): Boolean {
+        return sharedPreferences.getBoolean("status_trigger_log_enabled", true)
+    }
+
+    fun setStatusTriggerLogEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("status_trigger_log_enabled", enabled).apply()
+    }
 }

@@ -86,11 +86,13 @@ class PeriodicEffectManager @Inject constructor(
                 val newValue = attr.currentValue + effect.changeValue
                 attributeRepository.updateAttribute(attr.copy(currentValue = newValue))
                 
-                logRepository.insertLog(
-                    type = "STATUS_TRIGGERED",
-                    title = "状态触发: ${status.name}",
-                    details = "${attr.name} ${if (effect.changeValue >= 0) "+" else ""}${formatValue(effect.changeValue)}"
-                )
+                if (logRepository.isStatusTriggerLogEnabled()) {
+                    logRepository.insertLog(
+                        type = "STATUS_TRIGGERED",
+                        title = "状态触发: ${status.name}",
+                        details = "${attr.name} ${if (effect.changeValue >= 0) "+" else ""}${formatValue(effect.changeValue)}"
+                    )
+                }
             }
             
             nextTrigger += periodMillis

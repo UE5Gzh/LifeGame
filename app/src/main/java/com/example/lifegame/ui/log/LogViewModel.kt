@@ -76,4 +76,12 @@ class LogViewModel @Inject constructor(
     fun setDefaultLockForQuestType(questType: Int, isLocked: Boolean) {
         logRepository.setDefaultLockForQuestType(questType, isLocked)
     }
+
+    fun isStatusTriggerLogEnabled(): Boolean {
+        return logRepository.isStatusTriggerLogEnabled()
+    }
+
+    fun setStatusTriggerLogEnabled(enabled: Boolean) {
+        logRepository.setStatusTriggerLogEnabled(enabled)
+    }
 }
