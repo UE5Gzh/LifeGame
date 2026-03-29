@@ -30,6 +30,8 @@ import com.example.lifegame.data.entity.BehaviorWithModifiers
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
+import com.example.lifegame.databinding.DialogBehaviorOptionsBinding
+import com.example.lifegame.databinding.DialogDeleteConfirmBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -64,20 +66,32 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     }
 
     private fun showBehaviorOptionsDialog(behaviorWithModifiers: BehaviorWithModifiers) {
-        val options = arrayOf("移动到分组...", "删除行动")
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle(behaviorWithModifiers.behavior.name)
-            .setItems(options) { _, which ->
-                when (val option = options[which]) {
-                    "移动到分组..." -> {
-                        showMoveToGroupDialog(behaviorWithModifiers)
-                    }
-                    "删除行动" -> {
-                        showDeleteBehaviorDialog(behaviorWithModifiers)
-                    }
-                }
-            }
-            .show()
+        val dialogBinding = DialogBehaviorOptionsBinding.inflate(layoutInflater)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(dialogBinding.root)
+
+        dialogBinding.tvTitle.text = behaviorWithModifiers.behavior.name
+
+        dialogBinding.cardEdit.setOnClickListener {
+            dialog.dismiss()
+            showEditBehaviorDialog(behaviorWithModifiers)
+        }
+
+        dialogBinding.cardMoveGroup.setOnClickListener {
+            dialog.dismiss()
+            showMoveToGroupDialog(behaviorWithModifiers)
+        }
+
+        dialogBinding.cardDelete.setOnClickListener {
+            dialog.dismiss()
+            showDeleteBehaviorDialog(behaviorWithModifiers)
+        }
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showMoveToGroupDialog(behaviorWithModifiers: BehaviorWithModifiers) {
@@ -108,14 +122,23 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
     }
 
     private fun showDeleteBehaviorDialog(behaviorWithModifiers: BehaviorWithModifiers) {
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle("删除行动")
-            .setMessage("确定要删除「${behaviorWithModifiers.behavior.name}」吗？")
-            .setPositiveButton("删除") { _, _ ->
-                viewModel.deleteBehavior(behaviorWithModifiers.behavior)
-            }
-            .setNegativeButton("取消", null)
-            .show()
+        val dialogBinding = DialogDeleteConfirmBinding.inflate(layoutInflater)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(dialogBinding.root)
+
+        dialogBinding.tvTitle.text = "删除行动"
+        dialogBinding.tvMessage.text = "确定要删除「${behaviorWithModifiers.behavior.name}」吗？\n删除后相关数据将无法恢复。"
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            viewModel.deleteBehavior(behaviorWithModifiers.behavior)
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showEditBehaviorDialog(behaviorWithModifiers: BehaviorWithModifiers) {
@@ -437,10 +460,8 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                     onComplete()
                 }
             },
-            onItemClick = { behavior ->
-                if (!isSortMode) {
-                    showEditBehaviorDialog(behavior)
-                }
+            onItemClick = { _ ->
+                // 点击不再打开编辑，编辑已移至长按弹窗
             },
             onItemLongClick = { behavior ->
                 if (!isSortMode) {
@@ -549,6 +570,26 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         }
     }
 
+    private fun showDeleteGroupConfirmDialog(group: BehaviorGroupEntity) {
+        val dialogBinding = DialogDeleteConfirmBinding.inflate(layoutInflater)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(dialogBinding.root)
+
+        dialogBinding.tvTitle.text = "删除分组"
+        dialogBinding.tvMessage.text = "确定要删除分组「${group.name}」吗？\n组内行动将被移至未分组。"
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            viewModel.deleteGroup(group)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
     private fun showManageGroupsDialog() {
         val dialogBinding = DialogManageGroupsBinding.inflate(layoutInflater)
         val dialog = BottomSheetDialog(requireContext())
@@ -559,14 +600,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
                 showEditGroupDialog(group)
             },
             onDeleteClick = { group ->
-                MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                    .setTitle("删除分组")
-                    .setMessage("确定要删除分组「${group.name}」吗？组内行动将被移至未分组。")
-                    .setPositiveButton("删除") { _, _ ->
-                        viewModel.deleteGroup(group)
-                    }
-                    .setNegativeButton("取消", null)
-                    .show()
+                showDeleteGroupConfirmDialog(group)
             }
         )
         dialogBinding.rvGroups.layoutManager = LinearLayoutManager(requireContext())

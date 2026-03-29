@@ -14,104 +14,115 @@
     app:strokeWidth="0dp"
     app:rippleColor="@color/purple_500">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:id="@+id/content_area"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:padding="16dp"
         android:background="?attr/selectableItemBackground">
 
-        <View
-            android:id="@+id/view_color_indicator"
-            android:layout_width="4dp"
-            android:layout_height="0dp"
-            android:background="@color/purple_500"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+        <!-- 顶部行：颜色指示 + 名称 + 开关 -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/tv_name"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:text="状态名称"
-            android:textColor="@color/text_primary"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/switch_enabled"
-            app:layout_constraintStart_toEndOf="@id/view_color_indicator"
-            app:layout_constraintTop_toTopOf="parent" />
+            <!-- 左侧颜色圆点 -->
+            <View
+                android:id="@+id/view_color_indicator"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:background="@drawable/bg_status_dot"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tv_name"
+                app:layout_constraintBottom_toBottomOf="@id/tv_name" />
 
-        <TextView
-            android:id="@+id/tv_description"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="状态描述"
-            android:textColor="@color/text_secondary"
-            android:textSize="13sp"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="@id/tv_name"
-            app:layout_constraintStart_toStartOf="@id/tv_name"
-            app:layout_constraintTop_toBottomOf="@id/tv_name" />
+            <!-- 状态名称 -->
+            <TextView
+                android:id="@+id/tv_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:text="状态名称"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:ellipsize="end"
+                app:layout_constraintStart_toEndOf="@id/view_color_indicator"
+                app:layout_constraintEnd_toStartOf="@id/switch_enabled"
+                app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- 效果信息卡片 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/tv_effect_info"
-            android:layout_width="0dp"
+            <!-- 拖拽手柄 -->
+            <ImageView
+                android:id="@+id/iv_drag_handle"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_behavior"
+                android:visibility="gone"
+                app:tint="@color/text_hint"
+                app:layout_constraintEnd_toStartOf="@id/switch_enabled"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="@id/tv_name" />
+
+            <!-- 启用开关 -->
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_enabled"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:thumbTint="@color/purple_500"
+                app:trackTint="#444444"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- 效果标签容器（水平滚动） -->
+        <HorizontalScrollView
+            android:id="@+id/hsv_effect_tags"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:cardBackgroundColor="@color/card_dark"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="0dp"
-            app:strokeWidth="0dp"
-            app:layout_constraintEnd_toEndOf="@id/tv_name"
-            app:layout_constraintStart_toStartOf="@id/tv_name"
-            app:layout_constraintTop_toBottomOf="@id/tv_description">
+            android:layout_marginTop="12dp"
+            android:scrollbars="none"
+            android:overScrollMode="never">
+
+            <LinearLayout
+                android:id="@+id/ll_effect_tags"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <!-- 效果标签会动态添加 -->
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <!-- 持续时间进度条 -->
+        <LinearLayout
+            android:id="@+id/ll_duration_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
-                android:layout_width="match_parent"
+                android:id="@+id/tv_duration"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="10dp"
-                android:text="效果信息"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
-        </com.google.android.material.card.MaterialCardView>
+                android:text="⏱ 剩余 6小时"
+                android:textColor="@color/text_hint"
+                android:textSize="12sp"
+                android:layout_marginBottom="6dp" />
 
-        <TextView
-            android:id="@+id/tv_duration"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textColor="@color/text_hint"
-            android:textSize="12sp"
-            android:visibility="gone"
-            app:layout_constraintStart_toStartOf="@id/tv_name"
-            app:layout_constraintTop_toBottomOf="@id/tv_effect_info" />
+            <ProgressBar
+                android:id="@+id/pb_duration"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:max="100"
+                android:progress="60"
+                android:progressDrawable="@drawable/progress_duration" />
+        </LinearLayout>
 
-        <TextView
-            android:id="@+id/tv_next_trigger"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="8dp"
-            android:text="下次触发时间"
-            android:textColor="@color/text_hint"
-            android:textSize="12sp"
-            android:visibility="gone"
-            app:layout_constraintStart_toEndOf="@id/tv_duration"
-            app:layout_constraintTop_toBottomOf="@id/tv_effect_info" />
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switch_enabled"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:thumbTint="@color/purple_500"
-            app:trackTint="#444444"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

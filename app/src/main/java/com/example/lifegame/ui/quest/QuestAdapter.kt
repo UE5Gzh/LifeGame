@@ -145,7 +145,7 @@ class QuestAdapter(
                     val remainingHours = (remainingMs / (1000 * 60 * 60)).toInt()
                     
                     return when {
-                        isFailed -> "已过期"
+                        isFailed -> "已失败"
                         isCompleted && remainingHours > 0 -> "已完成，还剩${remainingHours}小时重置"
                         isCompleted -> "已完成"
                         remainingHours > 0 -> "还剩${remainingHours}小时重置"
@@ -158,7 +158,7 @@ class QuestAdapter(
                     val remainingDays = (remainingMs / (1000 * 60 * 60 * 24)).toInt()
                     
                     return when {
-                        isFailed -> "已过期"
+                        isFailed -> "已失败"
                         isCompleted && remainingDays > 0 -> "已完成，还剩${remainingDays}天重置"
                         isCompleted -> "已完成"
                         remainingDays > 0 -> "还剩${remainingDays}天重置"

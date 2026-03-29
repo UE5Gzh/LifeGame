@@ -1,11 +1,14 @@
 package com.example.lifegame.ui.log
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.example.lifegame.R
 import com.example.lifegame.data.entity.LogEntity
 import com.example.lifegame.databinding.ItemLogBinding
 import java.text.SimpleDateFormat
@@ -18,6 +21,26 @@ class LogAdapter(
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+    // 日志类型对应的颜色和图标
+    private data class LogTypeStyle(val color: Int, val icon: String)
+    private val typeStyles = mapOf(
+        "BEHAVIOR_EXECUTION" to LogTypeStyle(Color.parseColor("#4CAF50"), "⚡"),
+        "BEHAVIOR_CREATION" to LogTypeStyle(Color.parseColor("#8BC34A"), "➕"),
+        "QUEST_CREATION" to LogTypeStyle(Color.parseColor("#2196F3"), "📋"),
+        "QUEST_COMPLETION" to LogTypeStyle(Color.parseColor("#FFC107"), "🎉"),
+        "QUEST_ABANDON" to LogTypeStyle(Color.parseColor("#F44336"), "❌"),
+        "QUEST_EDIT" to LogTypeStyle(Color.parseColor("#03A9F4"), "✏️"),
+        "RANK_UP" to LogTypeStyle(Color.parseColor("#9C27B0"), "⬆️"),
+        "STATUS_ADD" to LogTypeStyle(Color.parseColor("#00BCD4"), "🏷️"),
+        "STATUS_REMOVE" to LogTypeStyle(Color.parseColor("#795548"), "🚫"),
+        "STATUS_TRIGGER" to LogTypeStyle(Color.parseColor("#009688"), "⏰"),
+        "ENERGY_RESET" to LogTypeStyle(Color.parseColor("#FF9800"), "🔄"),
+        "ATTRIBUTE_CHANGE" to LogTypeStyle(Color.parseColor("#E91E63"), "📊"),
+        "FOCUS_START" to LogTypeStyle(Color.parseColor("#673AB7"), "🎯"),
+        "FOCUS_END" to LogTypeStyle(Color.parseColor("#3F51B5"), "⏹️"),
+        "MANUAL_LOG" to LogTypeStyle(Color.parseColor("#607D8B"), "📝")
+    )
 
     inner class LogViewHolder(private val binding: ItemLogBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(log: LogEntity, showDateHeader: Boolean) {
@@ -33,7 +56,7 @@ class LogAdapter(
 
             binding.tvActionTitle.text = log.title
             binding.tvTime.text = timeStr
-            
+
             if (log.details.isNotEmpty()) {
                 binding.tvDetail.visibility = View.VISIBLE
                 binding.tvDetail.text = log.details
@@ -41,24 +64,28 @@ class LogAdapter(
                 binding.tvDetail.visibility = View.GONE
             }
 
+            // 获取类型样式
+            val style = typeStyles[log.type] ?: LogTypeStyle(Color.parseColor("#9C27B0"), "📋")
+
+            // 设置类型颜色指示条
+            binding.viewTypeIndicator.setBackgroundColor(style.color)
+
+            // 设置类型图标
+            binding.tvTypeIcon.text = style.icon
+
+            // 设置标题颜色
+            binding.tvActionTitle.setTextColor(style.color)
+
+            // 锁定状态处理
             if (log.isLocked) {
                 binding.ivLock.visibility = View.VISIBLE
-                binding.cardLog.setCardBackgroundColor(android.graphics.Color.parseColor("#1A237E")) // Light blue dark theme
                 binding.cardLog.strokeWidth = 2
-                binding.cardLog.strokeColor = android.graphics.Color.parseColor("#3F51B5")
+                binding.cardLog.strokeColor = ContextCompat.getColor(binding.root.context, R.color.purple_500)
+                binding.cardLog.setCardBackgroundColor(Color.parseColor("#1A1A30"))
             } else {
                 binding.ivLock.visibility = View.GONE
-                binding.cardLog.setCardBackgroundColor(android.graphics.Color.parseColor("#2B2B36")) // Default card_dark
                 binding.cardLog.strokeWidth = 0
-            }
-
-            // Optional: color coding based on type
-            when (log.type) {
-                "BEHAVIOR_EXECUTION" -> binding.tvActionTitle.setTextColor(android.graphics.Color.parseColor("#4CAF50"))
-                "QUEST_CREATION" -> binding.tvActionTitle.setTextColor(android.graphics.Color.parseColor("#2196F3"))
-                "QUEST_COMPLETION" -> binding.tvActionTitle.setTextColor(android.graphics.Color.parseColor("#FFC107"))
-                "QUEST_ABANDON" -> binding.tvActionTitle.setTextColor(android.graphics.Color.parseColor("#F44336"))
-                else -> binding.tvActionTitle.setTextColor(android.graphics.Color.parseColor("#BB86FC"))
+                binding.cardLog.setCardBackgroundColor(ContextCompat.getColor(binding.root.context, R.color.card_dark))
             }
 
             binding.root.setOnLongClickListener {

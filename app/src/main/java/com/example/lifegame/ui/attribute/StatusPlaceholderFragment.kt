@@ -11,8 +11,10 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lifegame.data.entity.StatusEntity
+import com.example.lifegame.databinding.DialogDeleteConfirmBinding
 import com.example.lifegame.databinding.FragmentStatusPlaceholderBinding
 import com.example.lifegame.ui.base.BaseFragment
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -127,14 +129,23 @@ class StatusPlaceholderFragment : BaseFragment<FragmentStatusPlaceholderBinding>
     }
 
     private fun showDeleteConfirmDialog(status: StatusEntity) {
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle("删除状态")
-            .setMessage("确定要删除状态「${status.name}」吗？")
-            .setPositiveButton("删除") { _, _ ->
-                viewModel.deleteStatus(status)
-            }
-            .setNegativeButton("取消", null)
-            .show()
+        val dialogBinding = DialogDeleteConfirmBinding.inflate(layoutInflater)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(dialogBinding.root)
+
+        dialogBinding.tvTitle.text = "删除状态"
+        dialogBinding.tvMessage.text = "确定要删除状态「${status.name}」吗？\n删除后相关数据将无法恢复。"
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            viewModel.deleteStatus(status)
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     fun triggerAddStatus() {

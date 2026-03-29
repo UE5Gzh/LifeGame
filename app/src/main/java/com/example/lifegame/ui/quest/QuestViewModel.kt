@@ -101,8 +101,6 @@ class QuestViewModel @Inject constructor(
             for (q in allQuests) {
                 if (q.quest.type == 0 && q.quest.lastResetTime < todayStart) {
                     if (q.quest.status == 0) {
-                        val failedQuest = q.quest.copy(status = 3, lastResetTime = System.currentTimeMillis(), isFocused = false)
-                        questRepository.updateQuest(failedQuest)
                         val punishments = applyPunishments(q)
                         logRepository.insertLogWithDefaultLock(
                             type = "QUEST_ABANDON",
@@ -110,17 +108,18 @@ class QuestViewModel @Inject constructor(
                             details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments",
                             questType = 0
                         )
-                    } else if (q.quest.status == 2) {
-                        questRepository.updateQuest(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()))
-                        val resetBehaviors = q.behaviorGoals.map { it.copy(currentCount = 0) }
-                        questRepository.updateQuestWithDetails(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()), q.attributeGoals, resetBehaviors, q.effects)
                     }
+                    val resetBehaviors = q.behaviorGoals.map { it.copy(currentCount = 0) }
+                    questRepository.updateQuestWithDetails(
+                        q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis(), isFocused = false), 
+                        q.attributeGoals, 
+                        resetBehaviors, 
+                        q.effects
+                    )
                 }
                 
                 if (q.quest.type == 3 && q.quest.lastResetTime < weekStart) {
                     if (q.quest.status == 0) {
-                        val failedQuest = q.quest.copy(status = 3, lastResetTime = System.currentTimeMillis(), isFocused = false)
-                        questRepository.updateQuest(failedQuest)
                         val punishments = applyPunishments(q)
                         logRepository.insertLogWithDefaultLock(
                             type = "QUEST_ABANDON",
@@ -128,11 +127,14 @@ class QuestViewModel @Inject constructor(
                             details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments",
                             questType = 3
                         )
-                    } else if (q.quest.status == 2) {
-                        questRepository.updateQuest(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()))
-                        val resetBehaviors = q.behaviorGoals.map { it.copy(currentCount = 0) }
-                        questRepository.updateQuestWithDetails(q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis()), q.attributeGoals, resetBehaviors, q.effects)
                     }
+                    val resetBehaviors = q.behaviorGoals.map { it.copy(currentCount = 0) }
+                    questRepository.updateQuestWithDetails(
+                        q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis(), isFocused = false), 
+                        q.attributeGoals, 
+                        resetBehaviors, 
+                        q.effects
+                    )
                 }
             }
         }

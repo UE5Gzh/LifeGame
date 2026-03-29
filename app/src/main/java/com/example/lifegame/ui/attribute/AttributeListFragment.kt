@@ -19,9 +19,11 @@ import com.example.lifegame.data.entity.AttributeEntity
 import com.example.lifegame.data.entity.AttributeWithRanks
 import com.example.lifegame.data.entity.QuestWithDetails
 import com.example.lifegame.databinding.DialogAddAttributeBinding
+import com.example.lifegame.databinding.DialogDeleteConfirmBinding
 import com.example.lifegame.databinding.DialogEditAttributeBinding
 import com.example.lifegame.databinding.FragmentAttributeListBinding
 import com.example.lifegame.ui.base.BaseFragment
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -253,15 +255,24 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
     }
 
     private fun showDeleteAttributeDialog(attributeWithRanks: AttributeWithRanks) {
-        MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setTitle("删除属性")
-            .setMessage("确定要删除属性「${attributeWithRanks.attribute.name}」吗？\n删除后相关数据将无法恢复。")
-            .setPositiveButton("删除") { _, _ ->
-                viewModel.checkAndDeleteAttribute(attributeWithRanks.attribute) { success, message ->
-                }
+        val dialogBinding = DialogDeleteConfirmBinding.inflate(layoutInflater)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(dialogBinding.root)
+
+        dialogBinding.tvTitle.text = "删除属性"
+        dialogBinding.tvMessage.text = "确定要删除属性「${attributeWithRanks.attribute.name}」吗？\n删除后相关数据将无法恢复。"
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            viewModel.checkAndDeleteAttribute(attributeWithRanks.attribute) { success, message ->
             }
-            .setNegativeButton("取消", null)
-            .show()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun formatAttributeValue(value: Float): String {
