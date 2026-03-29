@@ -42,6 +42,39 @@ class LogAdapter(
         "MANUAL_LOG" to LogTypeStyle(Color.parseColor("#607D8B"), "📝")
     )
 
+    // Selection mode
+    var isSelectionMode = false
+        set(value) {
+            field = value
+            if (!value) {
+                selectedLogs.clear()
+            }
+            notifyDataSetChanged()
+        }
+
+    private val selectedLogs = mutableSetOf<Long>()
+
+    fun getSelectedLogs(): Set<LogEntity> {
+        return currentList.filter { it.id in selectedLogs }.toSet()
+    }
+
+    fun getSelectedIds(): Set<Long> = selectedLogs.toSet()
+
+    fun clearSelection() {
+        selectedLogs.clear()
+        isSelectionMode = false
+        notifyDataSetChanged()
+    }
+
+    fun toggleSelection(logId: Long) {
+        if (selectedLogs.contains(logId)) {
+            selectedLogs.remove(logId)
+        } else {
+            selectedLogs.add(logId)
+        }
+        notifyDataSetChanged()
+    }
+
     inner class LogViewHolder(private val binding: ItemLogBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(log: LogEntity, showDateHeader: Boolean) {
             val dateStr = dateFormat.format(Date(log.timestamp))
@@ -88,9 +121,27 @@ class LogAdapter(
                 binding.cardLog.setCardBackgroundColor(ContextCompat.getColor(binding.root.context, R.color.card_dark))
             }
 
-            binding.root.setOnLongClickListener {
-                onLogLongClick(log)
-                true
+            // Selection mode
+            if (isSelectionMode) {
+                binding.cbSelect.visibility = View.VISIBLE
+                binding.cbSelect.isChecked = log.id in selectedLogs
+                binding.cardLog.strokeWidth = if (log.id in selectedLogs) 2 else 0
+                binding.cardLog.strokeColor = ContextCompat.getColor(binding.root.context, R.color.purple_500)
+                binding.root.setOnClickListener {
+                    toggleSelection(log.id)
+                }
+                binding.root.setOnLongClickListener(null)
+            } else {
+                binding.cbSelect.visibility = View.GONE
+                binding.root.setOnClickListener(null)
+                binding.root.setOnLongClickListener {
+                    onLogLongClick(log)
+                    true
+                }
+            }
+
+            binding.cbSelect.setOnClickListener {
+                toggleSelection(log.id)
             }
         }
     }

@@ -46,6 +46,10 @@ class LogRepository @Inject constructor(
         logDao.deleteLog(log)
     }
 
+    suspend fun deleteLogs(logs: List<LogEntity>) {
+        logs.forEach { logDao.deleteLog(it) }
+    }
+
     suspend fun clearLogs() {
         logDao.clearLogs()
     }

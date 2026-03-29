@@ -46,6 +46,12 @@ class LogViewModel @Inject constructor(
         }
     }
 
+    fun deleteLogs(logs: List<LogEntity>) {
+        viewModelScope.launch {
+            logRepository.deleteLogs(logs)
+        }
+    }
+
     fun toggleLogLock(log: LogEntity) {
         viewModelScope.launch {
             logRepository.updateLog(log.copy(isLocked = !log.isLocked))

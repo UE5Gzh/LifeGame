@@ -11,8 +11,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
 import com.example.lifegame.data.entity.LogEntity
-import com.example.lifegame.databinding.DialogConfirmBinding
 import com.example.lifegame.databinding.DialogAppSettingsBinding
+import com.example.lifegame.databinding.DialogConfirmBinding
 import com.example.lifegame.databinding.DialogDefaultLockSettingsBinding
 import com.example.lifegame.databinding.DialogExportSuccessBinding
 import com.example.lifegame.databinding.DialogOptionsBinding
@@ -44,7 +44,7 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
 
     override fun setupViews() {
         super.setupViews()
-        
+
         logAdapter = LogAdapter(
             onLogLongClick = { log ->
                 showLogOptionsDialog(log)
@@ -59,25 +59,16 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
             showAddLogDialog()
         }
 
-        binding.btnClear.setOnClickListener {
-            val dialogBinding = DialogConfirmBinding.inflate(LayoutInflater.from(requireContext()))
-            dialogBinding.tvTitle.text = "清空日志"
-            dialogBinding.tvMessage.text = "确定要清空所有未锁定的日志记录吗？此操作不可撤销。"
+        binding.btnSelect.setOnClickListener {
+            enterSelectionMode()
+        }
 
-            val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                .setView(dialogBinding.root)
-                .create()
+        binding.btnCancelSelect.setOnClickListener {
+            exitSelectionMode()
+        }
 
-            dialogBinding.btnCancel.setOnClickListener {
-                dialog.dismiss()
-            }
-
-            dialogBinding.btnConfirm.setOnClickListener {
-                viewModel.clearLogs()
-                dialog.dismiss()
-            }
-
-            dialog.show()
+        binding.btnDeleteSelected.setOnClickListener {
+            deleteSelectedLogs()
         }
 
         binding.btnSearch.setOnClickListener {
@@ -89,12 +80,53 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
         }
     }
 
+    private fun enterSelectionMode() {
+        logAdapter.isSelectionMode = true
+        binding.selectionToolbar.visibility = View.VISIBLE
+        binding.tvSelectedCount.text = "已选择 0 项"
+    }
+
+    private fun exitSelectionMode() {
+        logAdapter.clearSelection()
+        binding.selectionToolbar.visibility = View.GONE
+    }
+
+    private fun updateSelectionCount() {
+        val count = logAdapter.getSelectedIds().size
+        binding.tvSelectedCount.text = "已选择 $count 项"
+    }
+
+    private fun deleteSelectedLogs() {
+        val selectedLogs = logAdapter.getSelectedLogs()
+        if (selectedLogs.isEmpty()) return
+
+        val dialogBinding = DialogConfirmBinding.inflate(LayoutInflater.from(requireContext()))
+        dialogBinding.tvTitle.text = "删除日志"
+        dialogBinding.tvMessage.text = "确定要删除选中的 ${selectedLogs.size} 条日志吗？"
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            viewModel.deleteLogs(selectedLogs.toList())
+            exitSelectionMode()
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
     private fun showLogOptionsDialog(log: LogEntity) {
         val lockText = if (log.isLocked) "解锁此日志" else "锁定此日志"
-        
+
         val dialogBinding = DialogOptionsBinding.inflate(LayoutInflater.from(requireContext()))
         dialogBinding.tvTitle.text = "日志操作"
-        
+
         dialogBinding.btnOption1.text = "编辑日志"
         dialogBinding.cardOption1.visibility = View.VISIBLE
 
@@ -157,7 +189,7 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
     private fun showEditLogDialog(log: LogEntity) {
         val dialogBinding = DialogWriteLogBinding.inflate(LayoutInflater.from(requireContext()))
         val dateFormat = SimpleDateFormat("yyyy年MM月dd日 EEEE", Locale.CHINESE)
-        
+
         dialogBinding.tvDialogTitle.text = "编辑日志"
         dialogBinding.tvDate.text = dateFormat.format(Date(log.timestamp))
         dialogBinding.etContent.setText(log.details)
@@ -204,7 +236,7 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val targetDateStr = dateFormat.format(date)
         val logs = logAdapter.currentList
-        
+
         val targetPosition = logs.indexOfFirst { log ->
             dateFormat.format(Date(log.timestamp)) == targetDateStr
         }
@@ -257,6 +289,11 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
             dialog.dismiss()
         }
 
+        dialogBinding.btnClearAll.setOnClickListener {
+            showClearAllLogsDialog()
+            dialog.dismiss()
+        }
+
         dialogBinding.btnStorage.setOnClickListener {
             showStorageSettingsDialog()
             dialog.dismiss()
@@ -268,6 +305,27 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
         }
 
         dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showClearAllLogsDialog() {
+        val dialogBinding = DialogConfirmBinding.inflate(LayoutInflater.from(requireContext()))
+        dialogBinding.tvTitle.text = "清空日志"
+        dialogBinding.tvMessage.text = "确定要清空所有未锁定的日志记录吗？此操作不可撤销。"
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            viewModel.clearLogs()
             dialog.dismiss()
         }
 
@@ -321,7 +379,7 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
         dialogBinding.btnConfirm.setOnClickListener {
             val inputStr = dialogBinding.etLimit.text.toString()
             val limit = inputStr.toIntOrNull()
-            
+
             if (limit != null && limit in 50..50000) {
                 viewModel.setMaxLogLimit(limit)
             }

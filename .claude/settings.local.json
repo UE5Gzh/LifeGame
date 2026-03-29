@@ -4,7 +4,8 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(./gradlew :app:compileDebugKotlin)",
-      "Bash(./gradlew :app:compileDebugKotlin --offline)"
+      "Bash(./gradlew :app:compileDebugKotlin --offline)",
+      "Bash(./gradlew assembleDebug)"
     ]
   }
 }

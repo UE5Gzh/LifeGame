@@ -39,6 +39,17 @@
             android:layout_height="wrap_content"
             android:padding="16dp">
 
+            <!-- 选择复选框 -->
+            <CheckBox
+                android:id="@+id/cb_select"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:buttonTint="@color/purple_500"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
             <!-- 左侧类型颜色指示条 -->
             <View
                 android:id="@+id/view_type_indicator"
@@ -46,7 +57,7 @@
                 android:layout_height="0dp"
                 android:background="@color/purple_500"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintStart_toEndOf="@id/cb_select"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <!-- 日志类型图标 -->
