@@ -172,13 +172,13 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         }
 
         dialogBinding.etName.setText(behavior.name)
-        // 使用 RadioGroup 来设置选中状态，避免 RadioButton checked 属性冲突
-        if (behavior.energyType == 0) {
-            dialogBinding.rgEnergyType.check(dialogBinding.rbConsume.id)
+        // 根据精力类型显示正负值
+        val energyValueText = if (behavior.energyType == 0) {
+            "-${behavior.energyValue}"
         } else {
-            dialogBinding.rgEnergyType.check(dialogBinding.rbRestore.id)
+            "+${behavior.energyValue}"
         }
-        dialogBinding.etEnergyValue.setText(behavior.energyValue.toString())
+        dialogBinding.etEnergyValue.setText(energyValueText)
         dialogBinding.etFocusDuration.setText(behavior.focusDuration.toString())
 
         val availableAttributes = viewModel.attributes.value
@@ -238,11 +238,13 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             }
             dialogBinding.tilName.error = null
             
-            val energyType = if (dialogBinding.rgEnergyType.checkedRadioButtonId == dialogBinding.rbConsume.id) 0 else 1
             val energyValueStr = dialogBinding.etEnergyValue.text?.toString()?.trim()
             val focusDurationStr = dialogBinding.etFocusDuration.text?.toString()?.trim()
 
-            val energyValue = energyValueStr?.toIntOrNull() ?: 10
+            // 通过输入值的正负号判断精力类型：负值=消耗(0)，正值=恢复(1)
+            val rawValue = energyValueStr?.toIntOrNull() ?: 0
+            val energyType = if (rawValue >= 0) 1 else 0
+            val energyValue = kotlin.math.abs(rawValue)
             val focusDuration = focusDurationStr?.toIntOrNull() ?: 0
             
             val selectedGroupPos = dialogBinding.spinnerGroup.selectedItemPosition
@@ -765,7 +767,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
 
         dialogBinding.btnConfirm.setOnClickListener {
             val name = dialogBinding.etName.text?.toString()?.trim()
-            val energyType = if (dialogBinding.rgEnergyType.checkedRadioButtonId == dialogBinding.rbConsume.id) 0 else 1
             val energyValueStr = dialogBinding.etEnergyValue.text?.toString()?.trim()
             val focusDurationStr = dialogBinding.etFocusDuration.text?.toString()?.trim()
 
@@ -775,7 +776,10 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             }
             dialogBinding.tilName.error = null
 
-            val energyValue = energyValueStr?.toIntOrNull() ?: 10
+            // 通过输入值的正负号判断精力类型：负值=消耗(0)，正值=恢复(1)
+            val rawValue = energyValueStr?.toIntOrNull() ?: 0
+            val energyType = if (rawValue >= 0) 1 else 0
+            val energyValue = kotlin.math.abs(rawValue)
             val focusDuration = focusDurationStr?.toIntOrNull() ?: 0
 
             val selectedGroupPos = dialogBinding.spinnerGroup.selectedItemPosition

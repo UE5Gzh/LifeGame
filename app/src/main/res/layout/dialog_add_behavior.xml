@@ -113,80 +113,12 @@
                     android:letterSpacing="0.1" />
 
                 <TextView
-                    android:id="@+id/tv_energy_type_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="精力变化类型"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp" />
-
-                <RadioGroup
-                    android:id="@+id/rgEnergyType"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardConsume"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
-                        app:cardBackgroundColor="#2B2B36"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp"
-                        app:strokeWidth="1dp"
-                        app:strokeColor="#9C27B0">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:padding="12dp"
-                            android:orientation="horizontal">
-
-                            <RadioButton
-                                android:id="@+id/rbConsume"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:buttonTint="@color/purple_500"
-                                android:checked="true"
-                                android:text="消耗精力"
-                                android:textColor="@color/text_primary" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardRestore"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        app:cardBackgroundColor="#2B2B36"
-                        app:cardCornerRadius="8dp"
-                        app:cardElevation="0dp"
-                        app:strokeWidth="1dp"
-                        app:strokeColor="#444444">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:padding="12dp"
-                            android:orientation="horizontal">
-
-                            <RadioButton
-                                android:id="@+id/rbRestore"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:buttonTint="@color/purple_500"
-                                android:text="恢复精力"
-                                android:textColor="@color/text_primary" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-                </RadioGroup>
+                    android:text="输入正值如 +10 为恢复精力，负值如 -10 为消耗精力"
+                    android:textColor="@color/text_hint"
+                    android:textSize="12sp" />
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_energy"
@@ -194,7 +126,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:hint="精力数值"
+                    android:hint="精力值（如：+10 或 -10）"
                     android:textColorHint="#666666"
                     app:boxStrokeColor="@color/purple_500"
                     app:hintTextColor="@color/purple_200"
