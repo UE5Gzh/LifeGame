@@ -103,7 +103,7 @@ class LogRepository @Inject constructor(
     }
 
     fun isStatusTriggerLogEnabled(): Boolean {
-        return sharedPreferences.getBoolean("status_trigger_log_enabled", true)
+        return sharedPreferences.getBoolean("status_trigger_log_enabled", false)
     }
 
     fun setStatusTriggerLogEnabled(enabled: Boolean) {

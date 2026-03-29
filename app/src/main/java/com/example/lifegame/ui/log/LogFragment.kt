@@ -48,6 +48,9 @@ class LogFragment : BaseFragment<FragmentLogBinding>() {
         logAdapter = LogAdapter(
             onLogLongClick = { log ->
                 showLogOptionsDialog(log)
+            },
+            onSelectionChanged = {
+                updateSelectionCount()
             }
         )
         binding.rvLogs.apply {

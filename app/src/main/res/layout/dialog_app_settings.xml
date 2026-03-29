@@ -96,7 +96,7 @@
                         android:id="@+id/switch_status_log"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:checked="true"
+                        android:checked="false"
                         app:thumbTint="@color/purple_500"
                         app:trackTint="#444444" />
                 </LinearLayout>
@@ -127,7 +127,7 @@
                         android:textSize="15sp" />
                 </LinearLayout>
 
-                <!-- 日志存储设置 -->
+                <!-- 日志最大存储设置 -->
                 <LinearLayout
                     android:id="@+id/btn_storage"
                     android:layout_width="match_parent"
@@ -140,12 +140,12 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="日志存储设置"
+                        android:text="日志最大存储设置"
                         android:textColor="@color/text_primary"
                         android:textSize="15sp" />
                 </LinearLayout>
 
-                <!-- 任务日志默认锁定设置 -->
+                <!-- 任务日志锁定设置 -->
                 <LinearLayout
                     android:id="@+id/btn_default_lock"
                     android:layout_width="match_parent"
@@ -158,7 +158,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="任务日志默认锁定设置"
+                        android:text="任务日志锁定设置"
                         android:textColor="@color/text_primary"
                         android:textSize="15sp" />
                 </LinearLayout>

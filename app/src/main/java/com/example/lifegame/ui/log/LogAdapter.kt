@@ -16,7 +16,8 @@ import java.util.Date
 import java.util.Locale
 
 class LogAdapter(
-    private val onLogLongClick: (LogEntity) -> Unit
+    private val onLogLongClick: (LogEntity) -> Unit,
+    private val onSelectionChanged: (() -> Unit)? = null
 ) : ListAdapter<LogEntity, LogAdapter.LogViewHolder>(LogDiffCallback()) {
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -73,6 +74,7 @@ class LogAdapter(
             selectedLogs.add(logId)
         }
         notifyDataSetChanged()
+        onSelectionChanged?.invoke()
     }
 
     inner class LogViewHolder(private val binding: ItemLogBinding) : RecyclerView.ViewHolder(binding.root) {
