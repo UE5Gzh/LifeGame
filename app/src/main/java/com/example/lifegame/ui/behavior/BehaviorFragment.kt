@@ -172,10 +172,11 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         }
 
         dialogBinding.etName.setText(behavior.name)
+        // 使用 RadioGroup 来设置选中状态，避免 RadioButton checked 属性冲突
         if (behavior.energyType == 0) {
-            dialogBinding.rbConsume.isChecked = true
+            dialogBinding.rgEnergyType.check(dialogBinding.rbConsume.id)
         } else {
-            dialogBinding.rbRestore.isChecked = true
+            dialogBinding.rgEnergyType.check(dialogBinding.rbRestore.id)
         }
         dialogBinding.etEnergyValue.setText(behavior.energyValue.toString())
         dialogBinding.etFocusDuration.setText(behavior.focusDuration.toString())
@@ -237,7 +238,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             }
             dialogBinding.tilName.error = null
             
-            val energyType = if (dialogBinding.rbConsume.isChecked) 0 else 1
+            val energyType = if (dialogBinding.rgEnergyType.checkedRadioButtonId == dialogBinding.rbConsume.id) 0 else 1
             val energyValueStr = dialogBinding.etEnergyValue.text?.toString()?.trim()
             val focusDurationStr = dialogBinding.etFocusDuration.text?.toString()?.trim()
 
@@ -764,7 +765,7 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
 
         dialogBinding.btnConfirm.setOnClickListener {
             val name = dialogBinding.etName.text?.toString()?.trim()
-            val energyType = if (dialogBinding.rbConsume.isChecked) 0 else 1
+            val energyType = if (dialogBinding.rgEnergyType.checkedRadioButtonId == dialogBinding.rbConsume.id) 0 else 1
             val energyValueStr = dialogBinding.etEnergyValue.text?.toString()?.trim()
             val focusDurationStr = dialogBinding.etFocusDuration.text?.toString()?.trim()
 
