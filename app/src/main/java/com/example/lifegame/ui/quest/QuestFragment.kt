@@ -250,6 +250,7 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
         
         dialogBinding.cardInstantComplete.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
         dialogBinding.cardGiveUp.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
+        dialogBinding.cardReset.visibility = if (quest.type == 0 || quest.type == 3) View.VISIBLE else View.GONE
         dialogBinding.cardEdit.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
         dialogBinding.cardFocus.visibility = if (quest.status == 0) View.VISIBLE else View.GONE
         dialogBinding.btnFocus.text = if (quest.isFocused) "取消关注" else "设为关注任务"
@@ -266,6 +267,11 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         dialogBinding.cardGiveUp.setOnClickListener {
             showGiveUpConfirmDialog(questWithDetails)
+            dialog.dismiss()
+        }
+
+        dialogBinding.cardReset.setOnClickListener {
+            showResetConfirmDialog(questWithDetails)
             dialog.dismiss()
         }
 
@@ -327,6 +333,27 @@ class QuestFragment : BaseFragment<FragmentQuestBinding>() {
 
         dialogBinding.btnConfirm.setOnClickListener {
             viewModel.giveUpQuest(questWithDetails)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun showResetConfirmDialog(questWithDetails: QuestWithDetails) {
+        val dialogBinding = DialogConfirmBinding.inflate(layoutInflater)
+        dialogBinding.tvTitle.text = "确认重置"
+        dialogBinding.tvMessage.text = "确定要重置任务「${questWithDetails.quest.name}」吗？\n\n任务状态和行为目标进度将被重置，可以重新开始。"
+
+        val dialog = MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirm.setOnClickListener {
+            viewModel.resetQuest(questWithDetails)
             dialog.dismiss()
         }
 

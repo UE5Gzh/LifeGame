@@ -19,6 +19,8 @@ import com.example.lifegame.repository.LogRepository
 import com.example.lifegame.repository.StatusRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
@@ -72,8 +75,25 @@ class QuestViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    private var resetCheckJob: Job? = null
+
     init {
-        checkDailyResets()
+        startPeriodicResetCheck()
+    }
+
+    private fun startPeriodicResetCheck() {
+        resetCheckJob?.cancel()
+        resetCheckJob = viewModelScope.launch {
+            while (isActive) {
+                checkDailyResets()
+                delay(60_000L)
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        resetCheckJob?.cancel()
     }
 
     private fun checkDailyResets() {
@@ -383,6 +403,25 @@ class QuestViewModel @Inject constructor(
                 type = "QUEST_ABANDON",
                 title = "放弃${getTypeStr(questWithDetails.quest.type)}任务: ${questWithDetails.quest.name}",
                 details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments",
+                questType = questWithDetails.quest.type
+            )
+        }
+    }
+
+    fun resetQuest(questWithDetails: QuestWithDetails) {
+        viewModelScope.launch {
+            val resetBehaviors = questWithDetails.behaviorGoals.map { it.copy(currentCount = 0) }
+            questRepository.updateQuestWithDetails(
+                questWithDetails.quest.copy(status = 0, lastResetTime = System.currentTimeMillis(), isFocused = false),
+                questWithDetails.attributeGoals,
+                resetBehaviors,
+                questWithDetails.effects
+            )
+            
+            logRepository.insertLogWithDefaultLock(
+                type = "QUEST_RESET",
+                title = "重置${getTypeStr(questWithDetails.quest.type)}任务: ${questWithDetails.quest.name}",
+                details = "任务已重置，可以重新开始",
                 questType = questWithDetails.quest.type
             )
         }
