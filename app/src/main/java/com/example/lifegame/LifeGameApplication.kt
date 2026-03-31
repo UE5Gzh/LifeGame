@@ -2,6 +2,7 @@ package com.example.lifegame
 
 import android.app.Application
 import com.example.lifegame.service.PeriodicEffectManager
+import com.example.lifegame.service.PeriodicQuestResetWorker
 import com.example.lifegame.service.PeriodicStatusWorker
 import com.example.lifegame.service.QuestCompletionManager
 import dagger.hilt.android.HiltAndroidApp
@@ -19,6 +20,7 @@ class LifeGameApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         PeriodicStatusWorker.schedule(this)
+        PeriodicQuestResetWorker.schedule(this)
         periodicEffectManager.start()
         questCompletionManager.start()
     }

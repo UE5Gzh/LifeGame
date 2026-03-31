@@ -19,8 +19,6 @@ import com.example.lifegame.repository.LogRepository
 import com.example.lifegame.repository.StatusRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,9 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
@@ -74,91 +70,6 @@ class QuestViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
-
-    private var resetCheckJob: Job? = null
-
-    init {
-        startPeriodicResetCheck()
-    }
-
-    private fun startPeriodicResetCheck() {
-        resetCheckJob?.cancel()
-        resetCheckJob = viewModelScope.launch {
-            while (isActive) {
-                checkDailyResets()
-                delay(60_000L)
-            }
-        }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        resetCheckJob?.cancel()
-    }
-
-    private fun checkDailyResets() {
-        viewModelScope.launch {
-            val allQuests = questRepository.getActiveQuestsWithDetails()
-            val todayStart = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
-            
-            val weekStart = Calendar.getInstance().apply {
-                firstDayOfWeek = Calendar.MONDAY
-                set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                if (timeInMillis > System.currentTimeMillis()) {
-                    add(Calendar.WEEK_OF_YEAR, -1)
-                }
-            }.timeInMillis
-
-            for (q in allQuests) {
-                if (q.quest.type == 0 && q.quest.lastResetTime < todayStart) {
-                    if (q.quest.status == 0) {
-                        val punishments = applyPunishments(q)
-                        logRepository.insertLogWithDefaultLock(
-                            type = "QUEST_ABANDON",
-                            title = "日常任务超时失败: ${q.quest.name}",
-                            details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments",
-                            questType = 0
-                        )
-                    }
-                    val resetBehaviors = q.behaviorGoals.map { it.copy(currentCount = 0) }
-                    questRepository.updateQuestWithDetails(
-                        q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis(), isFocused = false), 
-                        q.attributeGoals, 
-                        resetBehaviors, 
-                        q.effects
-                    )
-                }
-                
-                if (q.quest.type == 3 && q.quest.lastResetTime < weekStart) {
-                    if (q.quest.status == 0) {
-                        val punishments = applyPunishments(q)
-                        logRepository.insertLogWithDefaultLock(
-                            type = "QUEST_ABANDON",
-                            title = "周常任务超时失败: ${q.quest.name}",
-                            details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments",
-                            questType = 3
-                        )
-                    }
-                    val resetBehaviors = q.behaviorGoals.map { it.copy(currentCount = 0) }
-                    questRepository.updateQuestWithDetails(
-                        q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis(), isFocused = false), 
-                        q.attributeGoals, 
-                        resetBehaviors, 
-                        q.effects
-                    )
-                }
-            }
-        }
-    }
 
     private fun formatValue(value: Float): String {
         return if (value == value.roundToInt().toFloat()) {
