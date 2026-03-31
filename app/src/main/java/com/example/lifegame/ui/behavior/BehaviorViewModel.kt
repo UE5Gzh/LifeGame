@@ -10,6 +10,7 @@ import com.example.lifegame.data.entity.BehaviorAttributeModifierEntity
 import com.example.lifegame.data.entity.BehaviorEntity
 import com.example.lifegame.data.entity.BehaviorGroupEntity
 import com.example.lifegame.data.entity.BehaviorWithModifiers
+import com.example.lifegame.data.entity.QuestWithDetails
 import com.example.lifegame.data.entity.StatusEntity
 import com.example.lifegame.repository.AttributeRepository
 import com.example.lifegame.repository.BehaviorRepository
@@ -259,11 +260,16 @@ class BehaviorViewModel @Inject constructor(
             val completedQuests = questRepository.incrementBehaviorGoalCountAndCheckCompletion(behavior.id, currentAttributes)
             for (quest in completedQuests) {
                 questCompletionManager.markCelebrated(quest.quest.id)
-                questRepository.updateQuest(quest.quest.copy(status = 1))
-                com.example.lifegame.util.CelebrationBus.postQuestComplete(
-                    questName = quest.quest.name,
-                    questType = quest.quest.type
-                )
+                // 日常/周常任务自动领取奖励（跳过待领取状态）
+                if (quest.quest.type == 0 || quest.quest.type == 3) {
+                    claimQuestReward(quest)
+                } else {
+                    questRepository.updateQuest(quest.quest.copy(status = 1))
+                    com.example.lifegame.util.CelebrationBus.postQuestComplete(
+                        questName = quest.quest.name,
+                        questType = quest.quest.type
+                    )
+                }
             }
             
             val title = if (isFocus) "专注完成: ${behavior.name}" else "执行行动: ${behavior.name}"
@@ -277,7 +283,75 @@ class BehaviorViewModel @Inject constructor(
             com.example.lifegame.util.AttributeChangeBus.postChanges(attributeChanges)
         }
     }
-    
+
+    private suspend fun claimQuestReward(quest: QuestWithDetails) {
+        val currentAttrs = attributeRepository.allAttributesWithRanks.first()
+        val rewardDetails = StringBuilder()
+        val attributeChanges = mutableListOf<com.example.lifegame.util.AttributeChangeItem>()
+
+        for (effect in quest.effects.filter { !it.isPunishment && it.type == 0 }) {
+            val attrWithRanks = currentAttrs.find { it.attribute.id == effect.attributeId }
+            val attrToUpdate = attrWithRanks?.attribute
+            if (attrToUpdate != null && effect.valueChange != null && effect.attributeId != null) {
+                val baseChange = effect.valueChange
+                var actualChange = baseChange
+                if (baseChange > 0) {
+                    // 计算属性最终变化（含加成/衰减）
+                    val bonusEffects = statusRepository.getEnabledBonusEffectsForAttribute(effect.attributeId).first()
+                    val decayEffects = statusRepository.getEnabledDecayEffectsForAttribute(effect.attributeId).first()
+
+                    val now = System.currentTimeMillis()
+                    var totalBonus = 0f
+                    for (bonus in bonusEffects) {
+                        val status = statusRepository.getStatusById(bonus.statusId)
+                        if (status != null && !isStatusExpired(status, now)) {
+                            totalBonus += bonus.bonusPercent
+                        }
+                    }
+
+                    var totalDecay = 0f
+                    for (decay in decayEffects) {
+                        val status = statusRepository.getStatusById(decay.statusId)
+                        if (status != null && !isStatusExpired(status, now)) {
+                            totalDecay += decay.bonusPercent
+                        }
+                    }
+
+                    if (totalDecay > 100f) totalDecay = 100f
+                    val afterBonus = actualChange * (1 + totalBonus / 100f)
+                    val afterDecay = afterBonus * (1 - totalDecay / 100f)
+                    actualChange = afterDecay
+                }
+                val oldValue = attrToUpdate.currentValue
+                val newValue = oldValue + actualChange
+                attributeRepository.updateAttribute(attrToUpdate.copy(currentValue = newValue))
+                rewardDetails.append("${attrToUpdate.name} ${if(actualChange > 0) "+" else ""}${formatValue(actualChange)} ")
+                attributeChanges.add(com.example.lifegame.util.AttributeChangeItem(attrToUpdate.name, actualChange, attrToUpdate.colorHex))
+
+                if (attrWithRanks.ranks.isNotEmpty()) {
+                    checkRankUp(attrToUpdate.name, oldValue, newValue, attrWithRanks.ranks)
+                }
+            }
+        }
+
+        // 日常/周常直接标记为已领取
+        questRepository.updateQuest(quest.quest.copy(status = 2, isFocused = false))
+
+        val questTypeStr = when (quest.quest.type) {
+            0 -> "日常"
+            3 -> "周常"
+            else -> "支线"
+        }
+        logRepository.insertLogWithDefaultLock(
+            type = "QUEST_COMPLETION",
+            title = "完成${questTypeStr}任务: ${quest.quest.name}",
+            details = if (rewardDetails.isEmpty()) "获得奖励: 无" else "获得奖励: $rewardDetails",
+            questType = quest.quest.type
+        )
+
+        com.example.lifegame.util.AttributeChangeBus.postChanges(attributeChanges)
+    }
+
     private fun checkRankUp(attributeName: String, oldValue: Float, newValue: Float, ranks: List<com.example.lifegame.data.entity.RankEntity>) {
         if (ranks.isEmpty()) return
         if (newValue <= oldValue) return
