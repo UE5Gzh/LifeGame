@@ -72,7 +72,7 @@ interface QuestDao {
     suspend fun incrementBehaviorGoalCount(behaviorId: Long)
 
     @Transaction
-    @Query("SELECT * FROM quests WHERE status = 0")
+    @Query("SELECT * FROM quests WHERE status = 0 OR (status = 2 AND (type = 0 OR type = 3))")
     suspend fun getActiveQuestsWithDetails(): List<QuestWithDetails>
 
     @Transaction
