@@ -32,6 +32,7 @@ class LifeGameApplication : Application(), Configuration.Provider {
         WorkManager.initialize(this, workManagerConfiguration)
         PeriodicStatusWorker.schedule(this)
         PeriodicQuestResetWorker.schedule(this)
+        PeriodicQuestResetWorker.scheduleImmediate(this)
         periodicEffectManager.start()
         questCompletionManager.start()
     }
