@@ -5,7 +5,11 @@
       "Bash(git commit:*)",
       "Bash(./gradlew :app:compileDebugKotlin)",
       "Bash(./gradlew :app:compileDebugKotlin --offline)",
-      "Bash(./gradlew assembleDebug)"
+      "Bash(./gradlew assembleDebug)",
+      "Bash(./gradlew assembleRelease)",
+      "Bash(./gradlew clean:*)",
+      "Bash(./gradlew :app:dependencies --configuration releaseRuntimeClasspath、)",
+      "Bash(ls -la app/build/outputs/apk/release/LifeGame_*.apk)"
     ]
   }
 }

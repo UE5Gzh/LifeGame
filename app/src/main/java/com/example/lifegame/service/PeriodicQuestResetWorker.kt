@@ -39,6 +39,8 @@ class PeriodicQuestResetWorker @AssistedInject constructor(
 
     private suspend fun checkAndResetQuests() {
         val allQuests = questRepository.getActiveQuestsWithDetails()
+        val now = System.currentTimeMillis()
+        
         val todayStart = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
@@ -62,19 +64,35 @@ class PeriodicQuestResetWorker @AssistedInject constructor(
             when (q.quest.type) {
                 0 -> { // Daily
                     if (q.quest.lastResetTime < todayStart) {
-                        resetQuest(q, todayStart)
+                        resetQuest(q)
                     }
                 }
                 3 -> { // Weekly
                     if (q.quest.lastResetTime < weekStart) {
-                        resetQuest(q, weekStart)
+                        resetQuest(q)
+                    }
+                }
+                1, 2 -> { // Main/Side quests - check deadline
+                    val deadline = q.quest.deadline
+                    if (deadline != null && q.quest.status == 0) {
+                        val deadlineEnd = Calendar.getInstance().apply {
+                            timeInMillis = deadline
+                            set(Calendar.HOUR_OF_DAY, 23)
+                            set(Calendar.MINUTE, 59)
+                            set(Calendar.SECOND, 59)
+                            set(Calendar.MILLISECOND, 999)
+                        }.timeInMillis
+                        
+                        if (now > deadlineEnd) {
+                            failExpiredQuest(q)
+                        }
                     }
                 }
             }
         }
     }
 
-    private suspend fun resetQuest(q: QuestWithDetails, currentTime: Long) {
+    private suspend fun resetQuest(q: QuestWithDetails) {
         if (q.quest.status == 0) {
             // Quest was not completed - apply punishments
             val punishments = applyPunishments(q)
@@ -88,10 +106,28 @@ class PeriodicQuestResetWorker @AssistedInject constructor(
 
         val resetBehaviors = q.behaviorGoals.map { it.copy(currentCount = 0) }
         questRepository.updateQuestWithDetails(
-            q.quest.copy(status = 0, lastResetTime = currentTime, isFocused = false),
+            q.quest.copy(status = 0, lastResetTime = System.currentTimeMillis(), isFocused = false),
             q.attributeGoals,
             resetBehaviors,
             q.effects
+        )
+    }
+
+    private suspend fun failExpiredQuest(q: QuestWithDetails) {
+        val punishments = applyPunishments(q)
+        questRepository.updateQuest(q.quest.copy(status = 3, isFocused = false))
+        
+        val typeStr = when (q.quest.type) {
+            1 -> "主线"
+            2 -> "支线"
+            else -> ""
+        }
+        
+        logRepository.insertLogWithDefaultLock(
+            type = "QUEST_EXPIRED",
+            title = "${typeStr}任务过期失败: ${q.quest.name}",
+            details = if (punishments.isEmpty()) "触发惩罚: 无" else "触发惩罚: $punishments",
+            questType = q.quest.type
         )
     }
 
@@ -99,7 +135,7 @@ class PeriodicQuestResetWorker @AssistedInject constructor(
         val currentAttrs = attributeRepository.allAttributesWithRanks.first()
         val punishmentDetails = StringBuilder()
 
-        for (effect in questWithDetails.effects.filter { it.isPunishment && it.type == 0 }) {
+        for (effect in questWithDetails.effects.filter { it.isPunishment && it.type == 0 && it.attributeId != null }) {
             val attrWithRanks = currentAttrs.find { it.attribute.id == effect.attributeId }
             val attrToUpdate = attrWithRanks?.attribute
             if (attrToUpdate != null && effect.valueChange != null) {
