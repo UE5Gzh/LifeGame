@@ -221,6 +221,12 @@ class BehaviorViewModel @Inject constructor(
     fun executeBehavior(behaviorWithModifiers: BehaviorWithModifiers, isFocus: Boolean = false) {
         viewModelScope.launch {
             val behavior = behaviorWithModifiers.behavior
+
+            // 检查体力是否充足（energyType == 0 表示消耗体力）
+            if (behavior.energyType == 0 && _currentEnergy.value < behavior.energyValue) {
+                return@launch  // 体力不足，不执行
+            }
+
             val change = if (behavior.energyType == 0) -behavior.energyValue else behavior.energyValue
             var newEnergy = _currentEnergy.value + change
             if (newEnergy > _maxEnergy.value) newEnergy = _maxEnergy.value
