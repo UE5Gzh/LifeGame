@@ -94,4 +94,24 @@ class AttributeViewModel @Inject constructor(
             repository.updateAttributes(attributes)
         }
     }
+
+    fun resetDefaultRanks(attributeId: Long) {
+        viewModelScope.launch {
+            repository.deleteRanksByAttributeId(attributeId)
+            
+            val defaultRanks = listOf(
+                RankEntity(attributeId = attributeId, name = "D", minValue = 0f, maxValue = 100f),
+                RankEntity(attributeId = attributeId, name = "C", minValue = 101f, maxValue = 300f),
+                RankEntity(attributeId = attributeId, name = "B", minValue = 301f, maxValue = 600f),
+                RankEntity(attributeId = attributeId, name = "A", minValue = 601f, maxValue = 1000f),
+                RankEntity(attributeId = attributeId, name = "S", minValue = 1001f, maxValue = 1500f),
+                RankEntity(attributeId = attributeId, name = "SS", minValue = 1501f, maxValue = 2500f),
+                RankEntity(attributeId = attributeId, name = "SSS", minValue = 2501f, maxValue = 99999f)
+            )
+            
+            for (rank in defaultRanks) {
+                repository.insertRank(rank)
+            }
+        }
+    }
 }

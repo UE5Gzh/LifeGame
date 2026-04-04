@@ -136,6 +136,21 @@
             app:strokeWidth="1dp"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
+        <!-- 重置默认段位按钮 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_reset_ranks"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:text="重置默认段位"
+            android:textColor="@color/attribute_negative"
+            android:textSize="14sp"
+            app:cornerRadius="8dp"
+            app:iconTint="@color/attribute_negative"
+            app:strokeColor="@color/attribute_negative"
+            app:strokeWidth="1dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
         <!-- 底部按钮 -->
         <LinearLayout
             android:layout_width="match_parent"

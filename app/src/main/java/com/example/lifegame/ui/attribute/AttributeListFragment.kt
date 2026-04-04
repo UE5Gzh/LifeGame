@@ -235,6 +235,17 @@ class AttributeListFragment : BaseFragment<FragmentAttributeListBinding>() {
             findNavController().navigate(R.id.rankManagementFragment, args)
         }
 
+        dialogBinding.btnResetRanks.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                .setTitle("重置默认段位")
+                .setMessage("确定要将「${attribute.name}」的段位重置为默认配置吗？\n\n默认段位：D(0-100) → C(101-300) → B(301-600) → A(601-1000) → S(1001-1500) → SS(1501-2500) → SSS(2501+)")
+                .setPositiveButton("重置") { _, _ ->
+                    viewModel.resetDefaultRanks(attribute.id)
+                }
+                .setNegativeButton("取消", null)
+                .show()
+        }
+
         dialogBinding.btnCancel.setOnClickListener {
             dialog.dismiss()
         }

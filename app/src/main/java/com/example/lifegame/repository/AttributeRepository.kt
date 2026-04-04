@@ -50,4 +50,8 @@ class AttributeRepository @Inject constructor(
     suspend fun deleteRank(rank: RankEntity) {
         rankDao.deleteRank(rank)
     }
+
+    suspend fun deleteRanksByAttributeId(attributeId: Long) {
+        rankDao.deleteRanksByAttributeId(attributeId)
+    }
 }
