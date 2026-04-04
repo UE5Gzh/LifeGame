@@ -59,7 +59,7 @@ class QuestRepository @Inject constructor(
         val completedQuests = mutableListOf<QuestWithDetails>()
         
         for (quest in activeQuests) {
-            if (isQuestComplete(quest, currentAttributes)) {
+            if (quest.quest.status == 0 && isQuestComplete(quest, currentAttributes)) {
                 completedQuests.add(quest)
             }
         }

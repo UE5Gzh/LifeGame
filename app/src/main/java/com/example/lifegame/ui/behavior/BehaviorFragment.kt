@@ -1,9 +1,7 @@
 package com.example.lifegame.ui.behavior
 
 import android.content.Intent
-import android.view.GestureDetector
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -34,7 +32,6 @@ import com.example.lifegame.databinding.DialogBehaviorOptionsBinding
 import com.example.lifegame.databinding.DialogDeleteConfirmBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 
 @AndroidEntryPoint
 class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
@@ -276,7 +273,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
         super.setupViews()
         
         setupRecyclerView()
-        setupGestureDetector()
 
         binding.btnAdd.setOnClickListener {
             showAddBehaviorDialog()
@@ -496,44 +492,6 @@ class BehaviorFragment : BaseFragment<FragmentBehaviorBinding>() {
             }
         }
         itemTouchHelper = ItemTouchHelper(touchHelperCallback)
-    }
-
-    private lateinit var gestureDetector: GestureDetector
-
-    private fun setupGestureDetector() {
-        gestureDetector = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
-            private val SWIPE_THRESHOLD = 100
-            private val SWIPE_VELOCITY_THRESHOLD = 100
-
-            override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                if (e1 == null) return false
-                
-                val diffX = e2.x - e1.x
-                if (abs(diffX) > SWIPE_THRESHOLD && abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                    val tabCount = binding.tabGroups.tabCount
-                    val currentTab = binding.tabGroups.selectedTabPosition
-                    
-                    if (diffX > 0 && currentTab > 0) {
-                        binding.tabGroups.getTabAt(currentTab - 1)?.select()
-                        return true
-                    } else if (diffX < 0 && currentTab < tabCount - 1) {
-                        binding.tabGroups.getTabAt(currentTab + 1)?.select()
-                        return true
-                    }
-                }
-                return false
-            }
-        })
-        
-        binding.rvBehaviors.setOnTouchListener { _, event ->
-            gestureDetector.onTouchEvent(event)
-            false
-        }
     }
 
     override fun observeData() {

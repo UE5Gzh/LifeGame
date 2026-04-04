@@ -21,7 +21,7 @@ interface AttributeDao {
     suspend fun getAttributeById(id: Long): AttributeEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAttribute(attribute: AttributeEntity)
+    suspend fun insertAttribute(attribute: AttributeEntity): Long
 
     @Update
     suspend fun updateAttribute(attribute: AttributeEntity)

@@ -22,6 +22,10 @@ class AttributeRepository @Inject constructor(
         attributeDao.insertAttribute(attribute)
     }
 
+    suspend fun insertAttributeAndGetId(attribute: AttributeEntity): Long {
+        return attributeDao.insertAttribute(attribute)
+    }
+
     suspend fun updateAttribute(attribute: AttributeEntity) {
         attributeDao.updateAttribute(attribute)
     }
